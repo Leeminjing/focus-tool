@@ -1,0 +1,46 @@
+"""Run local checks without third-party packages: python scripts/verify.py."""
+import argparse
+import json
+import platform
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", default="results/local/verification.json")
+    parser.add_argument("--demo-out", default="results/local/full-runtime.json")
+    args = parser.parse_args()
+    commands = [
+        ["go", "test", "-json", "./...", "-count=1", "-timeout=90s"],
+        ["go", "vet", "./..."],
+        [sys.executable, "-m", "unittest", "discover", "-s", "python/tests", "-v"],
+        [sys.executable, "examples/demo.py", "--out", args.demo_out],
+    ]
+    report = {"platform": platform.platform(), "python": sys.version, "checks": []}
+    success = True
+    for command in commands:
+        start = time.perf_counter()
+        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        report["checks"].append({"command": command, "exit_code": completed.returncode,
+                                  "duration_ms": (time.perf_counter() - start) * 1000,
+                                  "stdout": completed.stdout, "stderr": completed.stderr})
+        print(("PASS " if completed.returncode == 0 else "FAIL ") + " ".join(command))
+        if completed.returncode != 0:
+            print(completed.stdout, completed.stderr)
+            success = False
+            break
+    report["passed"] = success
+    output = ROOT / args.out
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("Verification record:", output)
+    return 0 if success else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

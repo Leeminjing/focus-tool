@@ -1,8 +1,8 @@
 # focus-tool-runtime
 
-研究如何缩短 Agent 从工具提交到有效后续行动的时间。调度与事件机制自研，实验仅使用 Go 标准库、本地文件和本地进程；不依赖模型 API、LangChain 或现成任务队列服务。
+研究如何缩短 Agent 从工具提交到有效后续行动的时间。调度与事件机制自研，使用 Go／Python 标准库、本地文件和本地进程；不依赖模型 API、LangChain 或现成任务队列服务。
 
-**当前是 M1 研究实现**：验证一个关键结果能否提前触发重规划，并实际停止失效任务。后续研究跨 Context 的集中路由、依赖调度、资源公平性和 Focus 适配。
+**已实现原图的本地完整闭环**：多 Context／Run 共用有界调度器，分别执行 Python 工具和本地进程，结果按归属返回 Run，并支持提前重规划、依赖绑定、资源互斥、取消确认和耐久结果重投。保留 M1 的三个对照模式。Focus 适配接口在本仓库提供，未修改或部署 Focus 主仓。
 
 ## 目标架构
 
@@ -12,11 +12,21 @@
 
 执行闭环为：Context A／B 的 Run → Focus 工具适配层 → 自研统一调度器 → Python／本地进程执行器 → 结果事件与归属路由 → 对应 Context 的 Run。多个会话的工具集中调度，A、B 的结果分别回到所属 Run；Run 消费结果后继续提交或调整工作。
 
-完整模块职责、结果消费约束和逐项实现状态见 [研究设计](docs/design.md#标准架构与验收范围)。当前 M1 只覆盖其中一部分，完整架构仍需继续实现。
+完整模块职责、结果消费约束和逐项实现状态见 [研究设计](docs/design.md#标准架构与验收范围)。
 
 ## 开始运行
 
-需要 Go 1.24 或更新版本。在仓库目录执行：
+需要 Go 1.24+ 和 Python 3.10+。在仓库目录执行完整架构演示：
+
+```powershell
+python examples/demo.py
+```
+
+一次运行全部 Go 测试、静态检查、Python 集成测试和完整演示：`python scripts/verify.py`。GitHub Actions 在 Windows 和 Linux 上执行同一检查，Linux 另做 race 检测。
+
+演示自动构建运行时，在临时工作区启动两个 Run，验证配置修复、失效进程取消、归属路由和 Python 依赖参数绑定。原始轨迹写入 `results/local/full-runtime.json`。已保存一次 [完整闭环轨迹](results/full-runtime-2026-10-27.json)。
+
+运行保留的 M1 性能对照：
 
 ```powershell
 go run ./cmd/lab
@@ -28,6 +38,7 @@ go run ./cmd/lab
 go run ./cmd/lab -repeat 5 -passes 256 -out results/local/report.json
 go test ./...
 go vet ./...
+python -m unittest discover -s python/tests -v
 ```
 
 正式比较使用相同 Go 版本、工作量和机器负载。每轮轮换模式顺序；编译、生成数据和最后写报告不计入 trial，子进程启动、工具执行、结果消费、修复及取消确认计入。无固定百分比通过阈值。
@@ -52,7 +63,11 @@ go vet ./...
 
 - [源码核验和协议约束](docs/protocol-research.md)：核验 Focus 的工具回合、消息配对、取消与权限边界。
 - [研究设计与里程碑](docs/design.md)：研究问题、当前边界、后续实验及接入条件。
-- `internal/runtime`：有界本地进程执行、取消确认、轨迹和结果收件箱。
-- `cmd/lab`：规则控制器、文件工具和对照实验。
+- [运行时协议与 Focus 接入](docs/runtime.md)：JSONL 协议、执行准入、恢复、消费回执和接入示例。
+- [完整架构验证记录](docs/verification.md)：测试范围、结果、原始输出与验证限制。
+- `runtime`：共享调度器、Python／进程执行器、资源与依赖、耐久事件和结果路由。
+- `cmd/runtime`：本地 stdio JSONL 服务，一个连接可承载多个 Context 的 Run。
+- `python/focus_tool`：Focus 调用适配层、执行前检查、按 Run 分发与消费结果。
+- `internal/runtime`、`cmd/lab`：保留的 M1 执行器与三个对照模式。
 
-当前取消能力仅覆盖实验中不产生后代的直接子进程；收件箱和账本仅在内存中。尚未实现通用 Shell 进程树治理、持久恢复、跨会话公平队列或生产权限系统。
+执行器目前要求工具是可信的叶子进程，不提供通用 Shell 进程树治理。资源名称由调用方显式声明，权限和租约由实际 Focus 接入方的执行前回调复核。运行时崩溃时，未确认执行记为 `unknown`，禁止自动重放并保留冲突资源隔离；需要人工核查，未提供自动清理与重试。耐久 journal 的研究上限为 128 MiB，达到上限会停止执行；尚未实现在线压缩。详见 [运行边界](docs/runtime.md#运行边界)。

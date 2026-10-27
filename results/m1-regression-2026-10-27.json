@@ -1,0 +1,2089 @@
+{
+  "created": "2026-10-27T20:52:52+08:00",
+  "go_version": "go1.26.5",
+  "platform": "windows/amd64",
+  "concurrency": 2,
+  "corpus_bytes": 8388608,
+  "scan_passes": 256,
+  "trials": [
+    {
+      "mode": "serial",
+      "repetition": 1,
+      "decision_ms": 2112.8267,
+      "total_ms": 2146.4154,
+      "consume_lag_ms": 2094.0109,
+      "scan_active_ms": 2084.614,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-11101077"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 50020
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-11101077",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 49668
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-11101077"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 38292
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 10.2636,
+          "pid": 50020
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.5709,
+          "pid": 50020
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 18.8158,
+          "pid": 50020
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 18.8158
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 27.4274,
+          "pid": 49668
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 41.7009,
+          "pid": 49668
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.0414,
+          "pid": 49668
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.0414,
+          "pid": 50020
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "pid": 50020
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "pid": 50020
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "pid": 50020
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "pid": 49668
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "pid": 49668
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2112.8267,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2112.8267
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2120.8114,
+          "pid": 38292
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2143.2131,
+          "pid": 38292
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2146.4154,
+          "pid": 38292
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2146.4154,
+          "pid": 38292
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2146.4154,
+          "pid": 38292
+        }
+      ]
+    },
+    {
+      "mode": "barrier",
+      "repetition": 1,
+      "decision_ms": 2234.4642,
+      "total_ms": 2256.1325,
+      "consume_lag_ms": 2218.8199999999997,
+      "scan_active_ms": 2223.6535,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3722991729"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 17344
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3722991729",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 2864
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3722991729"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 34444
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 6.4354,
+          "pid": 17344
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 10.8107,
+          "pid": 2864
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 13.4866,
+          "pid": 17344
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 15.6442,
+          "pid": 17344
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 25.025,
+          "pid": 2864
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 2864
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 17344
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 17344
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 17344
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 17344
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 2864
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "pid": 2864
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2234.4642,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2234.4642
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2243.0627,
+          "pid": 34444
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2253.3947,
+          "pid": 34444
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2256.1325,
+          "pid": 34444
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2256.1325,
+          "pid": 34444
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2256.1325,
+          "pid": 34444
+        }
+      ]
+    },
+    {
+      "mode": "event",
+      "repetition": 1,
+      "decision_ms": 22.4824,
+      "total_ms": 45.8599,
+      "consume_lag_ms": 0,
+      "scan_active_ms": 13.419,
+      "cancel_ack_ms": 2.939700000000002,
+      "scan_state": "cancelled",
+      "repaired": true,
+      "stale_rejected": true,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-2052348062"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 7664
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-2052348062",
+              "256"
+            ]
+          },
+          "state": "cancelled",
+          "error": "wait=exit status 1 read=\u003cnil\u003e",
+          "pid": 37768
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-2052348062"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 30060
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 10.9099,
+          "pid": 7664
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 12.0031,
+          "pid": 37768
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 20.3709,
+          "pid": 7664
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "pid": 7664
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "pid": 7664
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "pid": 7664
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "pid": 7664
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "pid": 7664
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "cancel_requested",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.4824
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 22.4824
+        },
+        {
+          "kind": "cancelled",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 25.4221,
+          "pid": 37768,
+          "detail": "wait=exit status 1 read=\u003cnil\u003e"
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 31.9737,
+          "pid": 30060
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 43.0701,
+          "pid": 30060
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 45.8599,
+          "pid": 30060
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 45.8599,
+          "pid": 37768
+        },
+        {
+          "kind": "consumed_stale",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 45.8599,
+          "pid": 37768
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 45.8599,
+          "pid": 30060
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 45.8599,
+          "pid": 30060
+        }
+      ]
+    },
+    {
+      "mode": "barrier",
+      "repetition": 2,
+      "decision_ms": 2191.1333,
+      "total_ms": 2210.6211,
+      "consume_lag_ms": 2172.8603,
+      "scan_active_ms": 2180.419,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3328206877"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 25956
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3328206877",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 27936
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3328206877"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 5332
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 8.0624,
+          "pid": 25956
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 10.7143,
+          "pid": 27936
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.1229,
+          "pid": 25956
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 18.273,
+          "pid": 25956
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 28.316,
+          "pid": 27936
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 27936
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 25956
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 25956
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 25956
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 25956
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 27936
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "pid": 27936
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 2191.1333,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2191.1333
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2201.9616,
+          "pid": 5332
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2208.8487,
+          "pid": 5332
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2210.6211,
+          "pid": 5332
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2210.6211,
+          "pid": 5332
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 2210.6211,
+          "pid": 5332
+        }
+      ]
+    },
+    {
+      "mode": "event",
+      "repetition": 2,
+      "decision_ms": 16.9056,
+      "total_ms": 33.1702,
+      "consume_lag_ms": 0,
+      "scan_active_ms": 11.690099999999997,
+      "cancel_ack_ms": 1.6179999999999986,
+      "scan_state": "cancelled",
+      "repaired": true,
+      "stale_rejected": true,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-801621167"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 43000
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-801621167",
+              "256"
+            ]
+          },
+          "state": "cancelled",
+          "error": "wait=exit status 1 read=\u003cnil\u003e",
+          "pid": 47268
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-801621167"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 38704
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 6.8335,
+          "pid": 47268
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 10.574,
+          "pid": 43000
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 15.3052,
+          "pid": 43000
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "pid": 43000
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "pid": 43000
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "pid": 43000
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "pid": 43000
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "pid": 43000
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "cancel_requested",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 16.9056
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 16.9056
+        },
+        {
+          "kind": "cancelled",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 18.5236,
+          "pid": 47268,
+          "detail": "wait=exit status 1 read=\u003cnil\u003e"
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 24.5699,
+          "pid": 38704
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 32.1005,
+          "pid": 38704
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 33.1702,
+          "pid": 38704
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 33.1702,
+          "pid": 47268
+        },
+        {
+          "kind": "consumed_stale",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 33.1702,
+          "pid": 47268
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 33.1702,
+          "pid": 38704
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 33.1702,
+          "pid": 38704
+        }
+      ]
+    },
+    {
+      "mode": "serial",
+      "repetition": 2,
+      "decision_ms": 1801.9411,
+      "total_ms": 1819.3882,
+      "consume_lag_ms": 1786.9323,
+      "scan_active_ms": 1779.2627,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-70395531"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 10952
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-70395531",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 23840
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-70395531"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 38480
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 8.0487,
+          "pid": 10952
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 13.4764,
+          "pid": 10952
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 15.0088,
+          "pid": 10952
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 15.0088
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 22.6784,
+          "pid": 23840
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 34.8757,
+          "pid": 23840
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 23840
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 10952
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 10952
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 10952
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 10952
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 23840
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "pid": 23840
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1801.9411,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1801.9411
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1810.0775,
+          "pid": 38480
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1817.7342,
+          "pid": 38480
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1819.3882,
+          "pid": 38480
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1819.3882,
+          "pid": 38480
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1819.3882,
+          "pid": 38480
+        }
+      ]
+    },
+    {
+      "mode": "event",
+      "repetition": 3,
+      "decision_ms": 19.0096,
+      "total_ms": 36.8733,
+      "consume_lag_ms": 0,
+      "scan_active_ms": 12.428899999999999,
+      "cancel_ack_ms": 1.6053999999999995,
+      "scan_state": "cancelled",
+      "repaired": true,
+      "stale_rejected": true,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-4122017825"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 36572
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-4122017825",
+              "256"
+            ]
+          },
+          "state": "cancelled",
+          "error": "wait=exit status 1 read=\u003cnil\u003e",
+          "pid": 15024
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-4122017825"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 30060
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 8.1861,
+          "pid": 15024
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 12.3642,
+          "pid": 36572
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 17.3982,
+          "pid": 36572
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "pid": 36572
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "pid": 36572
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "pid": 36572
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "pid": 36572
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "pid": 36572
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "cancel_requested",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 19.0096
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 19.0096
+        },
+        {
+          "kind": "cancelled",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 20.615,
+          "pid": 15024,
+          "detail": "wait=exit status 1 read=\u003cnil\u003e"
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 27.6892,
+          "pid": 30060
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 35.2649,
+          "pid": 30060
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 36.8733,
+          "pid": 30060
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 36.8733,
+          "pid": 15024
+        },
+        {
+          "kind": "consumed_stale",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 36.8733,
+          "pid": 15024
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 36.8733,
+          "pid": 30060
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 36.8733,
+          "pid": 30060
+        }
+      ]
+    },
+    {
+      "mode": "serial",
+      "repetition": 3,
+      "decision_ms": 1875.0805,
+      "total_ms": 1890.2235,
+      "consume_lag_ms": 1860.5152,
+      "scan_active_ms": 1849.6171,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-588057321"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 48380
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-588057321",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 30816
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-588057321"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 4684
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 7.0374,
+          "pid": 48380
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 12.9666,
+          "pid": 48380
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 14.5653,
+          "pid": 48380
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 14.5653
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 25.4634,
+          "pid": 30816
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 39.4903,
+          "pid": 30816
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 30816
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 48380
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 48380
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 48380
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 48380
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 30816
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "pid": 30816
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1875.0805,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1875.0805
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1881.07,
+          "pid": 4684
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1888.5298,
+          "pid": 4684
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1890.2235,
+          "pid": 4684
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1890.2235,
+          "pid": 4684
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1890.2235,
+          "pid": 4684
+        }
+      ]
+    },
+    {
+      "mode": "barrier",
+      "repetition": 3,
+      "decision_ms": 1775.827,
+      "total_ms": 1791.7722,
+      "consume_lag_ms": 1762.3187,
+      "scan_active_ms": 1768.812,
+      "cancel_ack_ms": 0,
+      "scan_state": "completed",
+      "repaired": true,
+      "stale_rejected": false,
+      "duplicate_rejected": true,
+      "results": [
+        {
+          "task": {
+            "id": "check",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "check",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3019409577"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":false}",
+          "pid": 48172
+        },
+        {
+          "task": {
+            "id": "scan",
+            "context_id": "context-A",
+            "revision": 1,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "scan",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3019409577",
+              "256"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"passes\":256,\"digest\":\"7943bf9056bda3108859401b8a52093499aab0cbda29a019dd96e03e355e0336\"}",
+          "pid": 49220
+        },
+        {
+          "task": {
+            "id": "repair",
+            "context_id": "context-A",
+            "revision": 2,
+            "command": [
+              "C:\\Users\\brubing\\AppData\\Local\\go-build\\c6\\c6ac20cfc9be3ccd0e232532df63a7f308a9e7dc44991d5e29af02f723fd9955-d\\lab.exe",
+              "worker",
+              "repair",
+              "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-lab-3019409577"
+            ]
+          },
+          "state": "completed",
+          "output": "{\"config_valid\":true}",
+          "pid": 41028
+        }
+      ],
+      "events": [
+        {
+          "kind": "queued",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "queued",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 0
+        },
+        {
+          "kind": "started",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 7.015,
+          "pid": 49220
+        },
+        {
+          "kind": "started",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 7.015,
+          "pid": 48172
+        },
+        {
+          "kind": "first_output",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 11.908,
+          "pid": 48172
+        },
+        {
+          "kind": "completed",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 13.5083,
+          "pid": 48172
+        },
+        {
+          "kind": "first_output",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 25.123,
+          "pid": 49220
+        },
+        {
+          "kind": "completed",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 49220
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 48172
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 48172
+        },
+        {
+          "kind": "delivered",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 48172
+        },
+        {
+          "kind": "consumed_duplicate",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 48172
+        },
+        {
+          "kind": "delivered",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 49220
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "scan",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "pid": 49220
+        },
+        {
+          "kind": "decision",
+          "task_id": "check",
+          "context_id": "context-A",
+          "revision": 1,
+          "at_ms": 1775.827,
+          "detail": "configuration invalid; revise plan"
+        },
+        {
+          "kind": "queued",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1775.827
+        },
+        {
+          "kind": "started",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1782.7957,
+          "pid": 41028
+        },
+        {
+          "kind": "first_output",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1790.2001,
+          "pid": 41028
+        },
+        {
+          "kind": "completed",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1791.7722,
+          "pid": 41028
+        },
+        {
+          "kind": "delivered",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1791.7722,
+          "pid": 41028
+        },
+        {
+          "kind": "consumed_accepted",
+          "task_id": "repair",
+          "context_id": "context-A",
+          "revision": 2,
+          "at_ms": 1791.7722,
+          "pid": 41028
+        }
+      ]
+    }
+  ]
+}

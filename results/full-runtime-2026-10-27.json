@@ -1,0 +1,880 @@
+{
+  "total_ms": 1232.7776000020094,
+  "events": [
+    {
+      "received_ms": 915.0225000048522,
+      "sequence": 2,
+      "task": {
+        "id": "268a7bb85412db77f9823fa44ae05bc969560c3e3fa203143ad900b30940681a",
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 1,
+        "kind": "python",
+        "python": {
+          "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+          "module": "demo_tools",
+          "function": "read_config",
+          "args": {}
+        },
+        "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+        "resources": [
+          {
+            "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+            "mode": "read"
+          }
+        ],
+        "timeout_ms": 30000
+      },
+      "result": {
+        "state": "completed",
+        "output": "{\"valid\": false}\r\n",
+        "pid": 35164
+      }
+    },
+    {
+      "received_ms": 917.7641999995103,
+      "sequence": 1,
+      "task": {
+        "id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "kind": "python",
+        "python": {
+          "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+          "module": "demo_tools",
+          "function": "echo",
+          "args": {
+            "value": 42
+          }
+        },
+        "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+        "timeout_ms": 30000
+      },
+      "result": {
+        "state": "completed",
+        "output": "{\"value\": 42}\r\n",
+        "pid": 44444
+      }
+    },
+    {
+      "received_ms": 1070.5180000004475,
+      "sequence": 4,
+      "task": {
+        "id": "d6c3aa6c6402397728955962b2fa074e73d034e3b4b05d768e3aa6d0ddafc95d",
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 2,
+        "kind": "python",
+        "python": {
+          "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+          "module": "demo_tools",
+          "function": "repair_config",
+          "args": {}
+        },
+        "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+        "resources": [
+          {
+            "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+            "mode": "write"
+          }
+        ],
+        "timeout_ms": 30000
+      },
+      "result": {
+        "state": "completed",
+        "output": "{\"valid\": true}\r\n",
+        "pid": 41536
+      }
+    },
+    {
+      "received_ms": 1227.7264000003925,
+      "sequence": 5,
+      "task": {
+        "id": "2f3fa7d0d963d534e2e4520eacdfc1299f60aa326743e425d405d351bc03841d",
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "kind": "python",
+        "python": {
+          "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+          "module": "demo_tools",
+          "function": "increment",
+          "args": {}
+        },
+        "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+        "dependencies": [
+          "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658"
+        ],
+        "bindings": {
+          "value": {
+            "task_id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+            "path": [
+              "value"
+            ]
+          }
+        },
+        "timeout_ms": 30000
+      },
+      "result": {
+        "state": "completed",
+        "output": "{\"answer\": 43}\r\n",
+        "pid": 52144
+      }
+    }
+  ],
+  "obsolete_scan": {
+    "task": {
+      "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+      "owner": {
+        "context_id": "context-A",
+        "run_id": "run-A"
+      },
+      "revision": 1,
+      "kind": "process",
+      "command": [
+        "C:\\Develop\\python\\python312\\python.exe",
+        "-u",
+        "-c",
+        "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+      ],
+      "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+      "timeout_ms": 30000
+    },
+    "state": "cancelled",
+    "result": {
+      "state": "cancelled",
+      "error": "exit status 1: ",
+      "pid": 52140
+    }
+  },
+  "journal": [
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 1,
+        "ack": 0,
+        "closed": false
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "ack": 0,
+        "closed": false
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "268a7bb85412db77f9823fa44ae05bc969560c3e3fa203143ad900b30940681a",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "read_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "read"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "queued"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "268a7bb85412db77f9823fa44ae05bc969560c3e3fa203143ad900b30940681a",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "read_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "read"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "running"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "process",
+          "command": [
+            "C:\\Develop\\python\\python312\\python.exe",
+            "-u",
+            "-c",
+            "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+          ],
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "queued"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "process",
+          "command": [
+            "C:\\Develop\\python\\python312\\python.exe",
+            "-u",
+            "-c",
+            "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+          ],
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "running"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "echo",
+            "args": {
+              "value": 42
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "queued"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "echo",
+            "args": {
+              "value": 42
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "running"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "echo",
+            "args": {
+              "value": 42
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "completed",
+        "result": {
+          "state": "completed",
+          "output": "{\"value\": 42}\r\n",
+          "pid": 44444
+        }
+      },
+      "event": {
+        "sequence": 1,
+        "task": {
+          "id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "echo",
+            "args": {
+              "value": 42
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "completed",
+          "output": "{\"value\": 42}\r\n",
+          "pid": 44444
+        }
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "268a7bb85412db77f9823fa44ae05bc969560c3e3fa203143ad900b30940681a",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "read_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "read"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "completed",
+        "result": {
+          "state": "completed",
+          "output": "{\"valid\": false}\r\n",
+          "pid": 35164
+        }
+      },
+      "event": {
+        "sequence": 2,
+        "task": {
+          "id": "268a7bb85412db77f9823fa44ae05bc969560c3e3fa203143ad900b30940681a",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "read_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "read"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "completed",
+          "output": "{\"valid\": false}\r\n",
+          "pid": 35164
+        }
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 1,
+        "ack": 2,
+        "closed": false
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 2,
+        "ack": 2,
+        "closed": false
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "process",
+          "command": [
+            "C:\\Develop\\python\\python312\\python.exe",
+            "-u",
+            "-c",
+            "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+          ],
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "cancel_requested"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "d6c3aa6c6402397728955962b2fa074e73d034e3b4b05d768e3aa6d0ddafc95d",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 2,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "repair_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "queued"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "d6c3aa6c6402397728955962b2fa074e73d034e3b4b05d768e3aa6d0ddafc95d",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 2,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "repair_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "running"
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "ack": 1,
+        "closed": false
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "process",
+          "command": [
+            "C:\\Develop\\python\\python312\\python.exe",
+            "-u",
+            "-c",
+            "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+          ],
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "state": "cancelled",
+        "result": {
+          "state": "cancelled",
+          "error": "exit status 1: ",
+          "pid": 52140
+        }
+      },
+      "event": {
+        "sequence": 3,
+        "task": {
+          "id": "1e35220f7d35b46ee7085bafea82a2a9324f9f262459fb927e896ac04b4f9b70",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 1,
+          "kind": "process",
+          "command": [
+            "C:\\Develop\\python\\python312\\python.exe",
+            "-u",
+            "-c",
+            "import hashlib,pathlib; data=pathlib.Path('corpus.bin').read_bytes(); [hashlib.sha256(data).digest() for _ in range(2048)]; print('scanned')"
+          ],
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "cancelled",
+          "error": "exit status 1: ",
+          "pid": 52140
+        }
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 2,
+        "ack": 3,
+        "closed": false
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "d6c3aa6c6402397728955962b2fa074e73d034e3b4b05d768e3aa6d0ddafc95d",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 2,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "repair_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "state": "completed",
+        "result": {
+          "state": "completed",
+          "output": "{\"valid\": true}\r\n",
+          "pid": 41536
+        }
+      },
+      "event": {
+        "sequence": 4,
+        "task": {
+          "id": "d6c3aa6c6402397728955962b2fa074e73d034e3b4b05d768e3aa6d0ddafc95d",
+          "owner": {
+            "context_id": "context-A",
+            "run_id": "run-A"
+          },
+          "revision": 2,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "repair_config",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "resources": [
+            {
+              "name": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne\\config",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "completed",
+          "output": "{\"valid\": true}\r\n",
+          "pid": 41536
+        }
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 2,
+        "ack": 4,
+        "closed": false
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "2f3fa7d0d963d534e2e4520eacdfc1299f60aa326743e425d405d351bc03841d",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "increment",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "dependencies": [
+            "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658"
+          ],
+          "bindings": {
+            "value": {
+              "task_id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+              "path": [
+                "value"
+              ]
+            }
+          },
+          "timeout_ms": 30000
+        },
+        "state": "queued"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "2f3fa7d0d963d534e2e4520eacdfc1299f60aa326743e425d405d351bc03841d",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "increment",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "dependencies": [
+            "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658"
+          ],
+          "bindings": {
+            "value": {
+              "task_id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+              "path": [
+                "value"
+              ]
+            }
+          },
+          "timeout_ms": 30000
+        },
+        "state": "running"
+      }
+    },
+    {
+      "task": {
+        "task": {
+          "id": "2f3fa7d0d963d534e2e4520eacdfc1299f60aa326743e425d405d351bc03841d",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "increment",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "dependencies": [
+            "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658"
+          ],
+          "bindings": {
+            "value": {
+              "task_id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+              "path": [
+                "value"
+              ]
+            }
+          },
+          "timeout_ms": 30000
+        },
+        "state": "completed",
+        "result": {
+          "state": "completed",
+          "output": "{\"answer\": 43}\r\n",
+          "pid": 52144
+        }
+      },
+      "event": {
+        "sequence": 5,
+        "task": {
+          "id": "2f3fa7d0d963d534e2e4520eacdfc1299f60aa326743e425d405d351bc03841d",
+          "owner": {
+            "context_id": "context-B",
+            "run_id": "run-B"
+          },
+          "revision": 1,
+          "kind": "python",
+          "python": {
+            "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+            "module": "demo_tools",
+            "function": "increment",
+            "args": {}
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-runtime-demo-gbni5jne",
+          "dependencies": [
+            "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658"
+          ],
+          "bindings": {
+            "value": {
+              "task_id": "a0ec989db01b3d6d41013c0ce104d4b38c72331b380034a28cdc4c31502db658",
+              "path": [
+                "value"
+              ]
+            }
+          },
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "completed",
+          "output": "{\"answer\": 43}\r\n",
+          "pid": 52144
+        }
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "ack": 5,
+        "closed": false
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-A",
+          "run_id": "run-A"
+        },
+        "revision": 2,
+        "ack": 4,
+        "closed": true
+      }
+    },
+    {
+      "run": {
+        "owner": {
+          "context_id": "context-B",
+          "run_id": "run-B"
+        },
+        "revision": 1,
+        "ack": 5,
+        "closed": true
+      }
+    }
+  ],
+  "checks": {
+    "config_repaired": true,
+    "cross_context_routing": true,
+    "dependency_bound": true,
+    "obsolete_scan_cancelled": true,
+    "checkpoint_before_ack": true
+  }
+}

@@ -1,0 +1,187 @@
+// runtime speaks a local JSONL protocol on stdio. Stdout is reserved for frames.
+package main
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"os"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	tool "focus-tool-runtime/runtime"
+)
+
+type writer struct {
+	mu      sync.Mutex
+	encoder *json.Encoder
+}
+
+func (w *writer) send(value any) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.encoder.Encode(value)
+}
+
+type request struct {
+	ID       uint64     `json:"id"`
+	Method   string     `json:"method"`
+	Owner    tool.Owner `json:"owner"`
+	Revision int        `json:"revision"`
+	Task     tool.Task  `json:"task"`
+	TaskID   string     `json:"task_id"`
+	After    uint64     `json:"after"`
+	Sequence uint64     `json:"sequence"`
+	Token    uint64     `json:"token"`
+	Allowed  bool       `json:"allowed"`
+	Reason   string     `json:"reason"`
+}
+
+type approvals struct {
+	mu      sync.Mutex
+	next    atomic.Uint64
+	waiting map[uint64]chan string
+	out     *writer
+}
+
+func (a *approvals) check(ctx context.Context, task tool.Task) error {
+	// A stopped or disconnected client cannot retain an execution slot forever.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	token := a.next.Add(1)
+	reply := make(chan string, 1)
+	a.mu.Lock()
+	a.waiting[token] = reply
+	a.mu.Unlock()
+	defer func() { a.mu.Lock(); delete(a.waiting, token); a.mu.Unlock() }()
+	if err := a.out.send(map[string]any{"type": "authorize", "token": token, "task": task}); err != nil {
+		return err
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case reason := <-reply:
+		if reason != "" {
+			return fmt.Errorf("%s", reason)
+		}
+		return nil
+	}
+}
+
+func (a *approvals) answer(req request) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	reply := a.waiting[req.Token]
+	if reply == nil {
+		return fmt.Errorf("authorization request expired")
+	}
+	reason := req.Reason
+	if !req.Allowed && reason == "" {
+		reason = "execution denied"
+	}
+	if req.Allowed {
+		reason = ""
+	}
+	select {
+	case reply <- reason:
+		return nil
+	default:
+		return fmt.Errorf("authorization already answered")
+	}
+}
+
+func serve() error {
+	journal := flag.String("journal", ".focus-tool/runtime.jsonl", "durable local JSONL journal; empty disables persistence")
+	concurrency := flag.Int("concurrency", 4, "maximum executing tasks")
+	capacity := flag.Int("capacity", 128, "maximum outstanding tasks")
+	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
+	flag.Parse()
+	out := &writer{encoder: json.NewEncoder(os.Stdout)}
+	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
+	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
+	if *requireApproval {
+		config.BeforeExecute = gates.check
+	}
+	engine, err := tool.New(config)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = engine.Close(ctx)
+	}()
+	pumpCtx, stopPump := context.WithCancel(context.Background())
+	defer stopPump()
+	go func() {
+		var cursor uint64
+		for {
+			for _, event := range engine.Pending(cursor) {
+				if err := out.send(map[string]any{"type": "event", "event": event}); err != nil {
+					return
+				}
+				cursor = event.Sequence
+			}
+			select {
+			case <-pumpCtx.Done():
+				return
+			case <-engine.Changed():
+			}
+		}
+	}()
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 4096), 4<<20)
+	for scanner.Scan() {
+		var req request
+		if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
+			return fmt.Errorf("invalid request: %w", err)
+		}
+		var value any
+		var err error
+		switch req.Method {
+		case "open_run":
+			err = engine.OpenRun(req.Owner, req.Revision)
+		case "submit":
+			value, err = engine.Submit(req.Task)
+		case "cancel":
+			err = engine.Cancel(req.Owner, req.TaskID)
+		case "status":
+			value, err = engine.Status(req.Owner, req.TaskID)
+		case "events":
+			value = engine.Events(req.Owner, req.After)
+		case "ack":
+			err = engine.Ack(req.Owner, req.Sequence)
+		case "close_run":
+			err = engine.CloseRun(req.Owner)
+		case "authorize":
+			err = gates.answer(req)
+		case "close":
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			err = engine.Close(ctx)
+			cancel()
+		default:
+			err = fmt.Errorf("unknown method %q", req.Method)
+		}
+		response := map[string]any{"type": "response", "id": req.ID, "result": value}
+		if err != nil {
+			response["error"] = err.Error()
+		}
+		if writeErr := out.send(response); writeErr != nil {
+			return writeErr
+		}
+		if req.Method == "close" {
+			return err
+		}
+	}
+	return scanner.Err()
+}
+
+func main() {
+	if err := serve(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
