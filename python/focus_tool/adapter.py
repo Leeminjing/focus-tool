@@ -5,6 +5,8 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from .client import RemoteRejected
+import asyncio
 
 
 @dataclass(frozen=True)
@@ -36,7 +38,21 @@ class FocusToolAdapter:
         self.workspace = str(Path(workspace).resolve())
         self.before_execute = before_execute
         self._submitted = {}
+        self._uncertain = set()
         client.authorize = self._authorize
+        client.on_ack = self._acknowledged
+        client.on_run_closed = self._run_closed
+
+    def _acknowledged(self, event):
+        key = self._key(event["task"])
+        self._submitted.pop(key, None)
+        self._uncertain.discard(key)
+
+    def _run_closed(self, owner):
+        for key in list(self._submitted):
+            if key[:2] == (owner["context_id"], owner["run_id"]):
+                self._submitted.pop(key)
+                self._uncertain.discard(key)
 
     @staticmethod
     def job_id(parent_message_id, call_id):
@@ -78,12 +94,35 @@ class FocusToolAdapter:
         self._submitted[key] = copy.deepcopy(task)
         try:
             await self.client.request("submit", task=task)
-        except BaseException:
+        except RemoteRejected as error:
+            if key in self._uncertain:
+                return self._unknown_receipt(task, call_id, name, error)
             if previous is None:
                 self._submitted.pop(key, None)
             raise
+        except RuntimeError as error:
+            # Keep the registered identity so a delayed execution check/retry can
+            # still be reconciled. Never invent a replacement call ID.
+            self._uncertain.add(key)
+            return self._unknown_receipt(task, call_id, name, error)
+        except asyncio.CancelledError:
+            self._uncertain.add(key)
+            raise
+        self._uncertain.discard(key)
         return {"role": "tool", "tool_call_id": call_id, "name": name,
                 "content": json.dumps({"job_id": task["id"], "state": "accepted"})}
+
+    @staticmethod
+    def _unknown_receipt(task, call_id, name, error):
+        return {"role": "tool", "tool_call_id": call_id, "name": name,
+                "content": json.dumps({"job_id": task["id"], "state": "acceptance_unknown",
+                                       "error": str(error), "reconcile": "query or resubmit the original job_id"})}
+
+    async def reconcile(self, run, parent_message_id, call_id):
+        identity = self.job_id(parent_message_id, call_id)
+        status = await run.status(identity)
+        self._uncertain.discard((run.owner["context_id"], run.owner["run_id"], identity))
+        return status
 
     async def submit_tool_calls(self, run, message):
         parent = message.get("id") if isinstance(message, dict) else message.id
@@ -102,7 +141,7 @@ class FocusToolAdapter:
             try:
                 message = await self.submit(run, parent_message_id=parent, call_id=call["id"],
                                             name=call["name"], args=call["args"])
-            except (RuntimeError, ValueError, KeyError) as error:
+            except (RemoteRejected, ValueError, KeyError) as error:
                 message = {"role": "tool", "tool_call_id": call["id"], "name": call["name"],
                            "content": json.dumps({"state": "rejected", "error": str(error)})}
             messages.append(message)

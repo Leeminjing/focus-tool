@@ -5,9 +5,11 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	goruntime "runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,6 +40,7 @@ type request struct {
 	Token    uint64     `json:"token"`
 	Allowed  bool       `json:"allowed"`
 	Reason   string     `json:"reason"`
+	Collect  bool       `json:"collect"`
 }
 
 type approvals struct {
@@ -97,11 +100,13 @@ func serve() error {
 	journal := flag.String("journal", ".focus-tool/runtime.jsonl", "durable local JSONL journal; empty disables persistence")
 	concurrency := flag.Int("concurrency", 4, "maximum executing tasks")
 	capacity := flag.Int("capacity", 128, "maximum outstanding tasks")
+	perRunCapacity := flag.Int("per-run-capacity", 0, "per-run outstanding tasks and unacknowledged facts; 0 uses capacity/concurrency")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
 	flag.Parse()
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
 	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
+	config.PerRunCapacity = *perRunCapacity
 	if *requireApproval {
 		config.BeforeExecute = gates.check
 	}
@@ -152,10 +157,20 @@ func serve() error {
 			value, err = engine.Status(req.Owner, req.TaskID)
 		case "events":
 			value = engine.Events(req.Owner, req.After)
+		case "archive_events":
+			value = engine.ArchivedEvents(req.Owner, req.After)
+		case "stats":
+			if req.Collect {
+				goruntime.GC()
+			}
+			value = engine.Stats()
 		case "ack":
 			err = engine.Ack(req.Owner, req.Sequence)
 		case "close_run":
 			err = engine.CloseRun(req.Owner)
+			if err == nil {
+				value = engine.Archive(req.Owner)
+			}
 		case "authorize":
 			err = gates.answer(req)
 		case "close":
@@ -168,6 +183,10 @@ func serve() error {
 		response := map[string]any{"type": "response", "id": req.ID, "result": value}
 		if err != nil {
 			response["error"] = err.Error()
+			response["error_code"] = "rejected"
+			if req.Method == "submit" && errors.Is(err, tool.ErrStorageUnknown) {
+				response["error_code"] = "acceptance_unknown"
+			}
 		}
 		if writeErr := out.send(response); writeErr != nil {
 			return writeErr

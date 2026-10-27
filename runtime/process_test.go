@@ -59,14 +59,19 @@ func TestUnacknowledgedResultsApplyBackpressure(t *testing.T) {
 	e := testEngine(t, Config{Concurrency: 1, Capacity: 1, Executors: map[string]Executor{"test": ExecutorFunc(func(context.Context, Task) Result { return Result{State: "completed"} })}})
 	submit(t, e, task("first", ownerA))
 	event := completion(t, e, ownerA, "first")
-	if _, err := e.Submit(task("next", ownerB)); err != ErrQueueFull {
-		t.Fatalf("slow consumer bypassed backpressure: %v", err)
+	if _, err := e.Submit(task("next-A", ownerA)); err != ErrRunFull {
+		t.Fatalf("slow Run bypassed its quota: %v", err)
+	}
+	submit(t, e, task("next-B", ownerB))
+	other := completion(t, e, ownerB, "next-B")
+	if err := e.Ack(ownerB, other.Sequence); err != nil {
+		t.Fatal(err)
 	}
 	if err := e.Ack(ownerA, event.Sequence); err != nil {
 		t.Fatal(err)
 	}
-	submit(t, e, task("next", ownerB))
-	completion(t, e, ownerB, "next")
+	submit(t, e, task("next-A", ownerA))
+	completion(t, e, ownerA, "next-A")
 }
 
 func TestContextHasOneActiveRunAndClosedRuntimeRejectsAck(t *testing.T) {
@@ -115,5 +120,26 @@ func TestBindingRejectsJSONPrefixWithTrailingLogs(t *testing.T) {
 	submit(t, e, child)
 	if event := completion(t, e, ownerA, "child"); event.Result.State != "failed" {
 		t.Fatal(event)
+	}
+}
+
+func TestClosedRunRetainsFactsWithoutBlockingAnotherContext(t *testing.T) {
+	e := testEngine(t, Config{Concurrency: 1, Capacity: 1, Executors: map[string]Executor{"test": ExecutorFunc(func(context.Context, Task) Result { return Result{State: "completed"} })}})
+	submit(t, e, task("abandoned", ownerA))
+	event := completion(t, e, ownerA, "abandoned")
+	if err := e.CloseRun(ownerA); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Submit(task("other-context", ownerB)); err != nil {
+		t.Fatalf("closed Run blocked B: %v", err)
+	}
+	if len(e.Events(ownerA, 0)) != 1 {
+		t.Fatal("archiving deleted the execution fact")
+	}
+	if err := e.Ack(ownerA, event.Sequence); err == nil {
+		t.Fatal("closed Run retained consumption authority")
+	}
+	if len(e.ArchivedEvents(ownerA, 0)) != 1 || e.Archive(ownerA).Custodian != "runtime_archive" {
+		t.Fatal("archive custody missing")
 	}
 }

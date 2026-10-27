@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from focus_tool import FocusToolAdapter, RuntimeClient, ToolDefinition
@@ -211,8 +212,14 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         run = await client.open_run("A", "closing")
         await adapter.submit(run, parent_message_id="m", call_id="slow", name="start_slow", args={})
         await run.close()
-        event = await self.event(run)
-        self.assertEqual(event["result"]["state"], "cancelled")
+        identity = adapter.job_id("m", "slow")
+        for _ in range(200):
+            if (await run.status(identity))["state"] == "cancelled":
+                break
+            await asyncio.sleep(.01)
+        self.assertEqual((await run.status(identity))["state"], "cancelled")
+        archived = await run.archived_events()
+        self.assertEqual(archived[0]["result"]["state"], "cancelled")
         with self.assertRaises(RuntimeError):
             await adapter.submit(run, parent_message_id="m", call_id="new", name="start_echo", args={"value": 1})
 
@@ -249,13 +256,13 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         b = await client.open_run("B", "b")
         await adapter.submit(a, parent_message_id="m", call_id="one", name="start_echo", args={"value": 1})
         event = await self.event(a)
-        with self.assertRaisesRegex(RuntimeError, "capacity exhausted"):
-            await adapter.submit(b, parent_message_id="m", call_id="two", name="start_echo", args={"value": 2})
-        await a.ack(event)
+        with self.assertRaisesRegex(RuntimeError, "run capacity exhausted"):
+            await adapter.submit(a, parent_message_id="m", call_id="two", name="start_echo", args={"value": 2})
         await adapter.submit(b, parent_message_id="m", call_id="two", name="start_echo", args={"value": 2})
         other = await self.event(b)
         self.assertEqual(json.loads(other["result"]["output"]), {"value": 2})
         await b.ack(other)
+        await a.ack(event)
 
     async def test_partially_accepted_batch_preserves_every_tool_message_pair(self):
         client, adapter = await self.start(concurrency=1, capacity=1)
@@ -271,6 +278,30 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         event = await self.event(run)
         self.assertEqual(json.loads(event["result"]["output"]), {"value": 1})
         await run.ack(event)
+
+    async def test_selector_compatible_transport_executes_real_daemon(self):
+        with patch("asyncio.create_subprocess_exec", side_effect=NotImplementedError):
+            client, adapter = await self.start()
+        run = await client.open_run("A", "threaded")
+        await adapter.submit(run, parent_message_id="m", call_id="x", name="start_echo", args={"value": 42})
+        event = await self.event(run)
+        self.assertEqual(json.loads(event["result"]["output"]), {"value": 42})
+        await run.ack(event)
+        await run.close()
+
+    async def test_close_transfers_even_acknowledged_facts_to_inspectable_archive(self):
+        client, adapter = await self.start()
+        run = await client.open_run("A", "archive")
+        await adapter.submit(run, parent_message_id="m", call_id="x", name="start_echo", args={"value": 42})
+        event = await self.event(run)
+        await run.ack(event)
+        receipt = await run.close()
+        self.assertEqual(receipt["custodian"], "runtime_archive")
+        self.assertEqual(receipt["unacknowledged_facts"], 0)
+        facts = await run.archived_events()
+        self.assertEqual([fact["sequence"] for fact in facts], [event["sequence"]])
+        with self.assertRaisesRegex(RuntimeError, "Run closed"):
+            await run.next_event()
 
 
 if __name__ == "__main__":

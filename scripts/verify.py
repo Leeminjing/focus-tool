@@ -14,6 +14,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="results/local/verification.json")
     parser.add_argument("--demo-out", default="results/local/full-runtime.json")
+    parser.add_argument("--focus-root", help="optional real Focus checkout; needs its dependencies and cached PostgreSQL Docker image")
+    parser.add_argument("--focus-python", default=sys.executable)
+    parser.add_argument("--focus-out", default="results/local/focus-integration.json")
     args = parser.parse_args()
     commands = [
         ["go", "test", "-json", "./...", "-count=1", "-timeout=90s"],
@@ -21,6 +24,8 @@ def main():
         [sys.executable, "-m", "unittest", "discover", "-s", "python/tests", "-v"],
         [sys.executable, "examples/demo.py", "--out", args.demo_out],
     ]
+    if args.focus_root:
+        commands.append([args.focus_python, "integration/focus/run_live.py", "--focus-root", args.focus_root, "--out", args.focus_out])
     report = {"platform": platform.platform(), "python": sys.version, "checks": []}
     success = True
     for command in commands:

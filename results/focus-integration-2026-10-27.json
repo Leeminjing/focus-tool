@@ -1,0 +1,48 @@
+{
+  "focus_commit": "340bf2b8607dfb536d9376d400a02b122a4542bb",
+  "focus_root": "C:\\Users\\brubing\\Desktop\\ag-project\\focus",
+  "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+  "decision_source": "deterministic local StateGraph; no model inference",
+  "cases": [
+    {
+      "case": "allowed",
+      "focus_run_id": "52fb1af6d3bd4769afcfb2e7aa2d6221",
+      "focus_status": "success",
+      "runtime_status": "completed",
+      "tool_error": null,
+      "lease_checks": 2,
+      "checkpoint_id": "1f1d2116-504c-6e7c-8003-a3c9d40b2d1b",
+      "delivery_receipts": 1,
+      "submission_ledger_attempts": 1,
+      "event_wake_ms": 242.67959999997402,
+      "artifact_exists": true
+    },
+    {
+      "case": "permission_revoked",
+      "focus_run_id": "183064724f7649d9b3dc174091bbc460",
+      "focus_status": "success",
+      "runtime_status": "failed",
+      "tool_error": "execution admission: FILE_POLICY_DENIED: 当前模式 read-only 不允许修改 C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-live-integration-0ped1pjk\\permission_revoked\\output.txt。若确需本次放宽，请在原工具调用提供足够的最小 requested_mode 和非空 reason，由用户单次批准；先核对已完成的副作用，再决定是否重试。",
+      "lease_checks": 2,
+      "checkpoint_id": "1f1d2116-51c7-6a2c-8003-d48c8e45e787",
+      "delivery_receipts": 1,
+      "submission_ledger_attempts": 1,
+      "event_wake_ms": 0.0664000035612844,
+      "artifact_exists": false
+    },
+    {
+      "case": "lease_released",
+      "focus_run_id": "4b6f484fc5664d58835989b87ff0eacb",
+      "focus_status": "success",
+      "runtime_status": "failed",
+      "tool_error": "execution admission: workspace lease 不存在、已释放或 token 无效",
+      "lease_checks": 2,
+      "checkpoint_id": "1f1d2116-5305-6c23-8003-a9cdf84ce1bb",
+      "delivery_receipts": 1,
+      "submission_ledger_attempts": 1,
+      "event_wake_ms": 0.06580000626854599,
+      "artifact_exists": false
+    }
+  ],
+  "passed": true
+}

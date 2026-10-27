@@ -4,6 +4,8 @@
 
 **已实现原图的本地完整闭环**：多 Context／Run 共用有界调度器，分别执行 Python 工具和本地进程，结果按归属返回 Run，并支持提前重规划、依赖绑定、资源互斥、取消确认和耐久结果重投。保留 M1 的三个对照模式。Focus 适配接口在本仓库提供，未修改或部署 Focus 主仓。
 
+已补取消等待、提交接收不确定和 Run 容量隔离边界，并通过真实 Focus Run 小范围联调。最新性能测试经过新增共享 runtime＋Python 适配器＋fsync journal，见 [边界修复与完整链路性能](docs/boundaries-and-performance.md)；历史索引仍随任务累积，尚不能宣称长期内存稳定。
+
 ## 目标架构
 
 下图属于本会话首条需求，是本仓库的目标架构与验收标准。实现和设计文档按原图的模块及连接关系推进。
@@ -25,6 +27,15 @@ python examples/demo.py
 一次运行全部 Go 测试、静态检查、Python 集成测试和完整演示：`python scripts/verify.py`。GitHub Actions 在 Windows 和 Linux 上执行同一检查，Linux 另做 race 检测。
 
 演示自动构建运行时，在临时工作区启动两个 Run，验证配置修复、失效进程取消、归属路由和 Python 依赖参数绑定。原始轨迹写入 `results/local/full-runtime.json`。已保存一次 [完整闭环轨迹](results/full-runtime-2026-10-27.json)。
+
+运行新增完整链路的 barrier／event 对照、持续多 Context 负载，以及无需纠偏的负对照：
+
+```powershell
+python benchmarks/full_runtime.py
+python benchmarks/full_runtime.py --negative-control --repeat 3 --out results/local/negative-control.json
+```
+
+真实 Focus 接入需要其现有 Python 环境、源码与本机缓存的 PostgreSQL Docker 镜像，复现方法见 [接入说明](integration/focus/README.md)。核心测试不要求安装这些额外依赖。
 
 运行保留的 M1 性能对照：
 
@@ -65,6 +76,8 @@ python -m unittest discover -s python/tests -v
 - [研究设计与里程碑](docs/design.md)：研究问题、当前边界、后续实验及接入条件。
 - [运行时协议与 Focus 接入](docs/runtime.md)：JSONL 协议、执行准入、恢复、消费回执和接入示例。
 - [完整架构验证记录](docs/verification.md)：测试范围、结果、原始输出与验证限制。
+- [边界修复与完整链路性能](docs/boundaries-and-performance.md)：三项回归、最新对照、负对照和持续负载结果。
+- [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
 - `runtime`：共享调度器、Python／进程执行器、资源与依赖、耐久事件和结果路由。
 - `cmd/runtime`：本地 stdio JSONL 服务，一个连接可承载多个 Context 的 Run。
 - `python/focus_tool`：Focus 调用适配层、执行前检查、按 Run 分发与消费结果。

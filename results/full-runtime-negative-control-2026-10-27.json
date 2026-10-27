@@ -1,0 +1,487 @@
+{
+  "trials": [
+    {
+      "mode": "barrier",
+      "total_ms": 2293.2366,
+      "decision_ms": 2287.1648,
+      "check_consume_lag_ms": 2112.5717,
+      "scan_state": "completed",
+      "scan_pid": 26044,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-q271lmp7",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 40308
+          },
+          "timing": {
+            "queued_ns": 1793110462626488200,
+            "started_ns": 1793110462627125500,
+            "finished_ns": 1793110462790339700
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-q271lmp7",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 26044
+          },
+          "timing": {
+            "queued_ns": 1793110462627760000,
+            "started_ns": 1793110462628420400,
+            "finished_ns": 1793110464902314700
+          }
+        }
+      ],
+      "repetition": 1
+    },
+    {
+      "mode": "event",
+      "total_ms": 2130.5228,
+      "decision_ms": 187.9298,
+      "check_consume_lag_ms": 0.6002,
+      "scan_state": "completed",
+      "scan_pid": 39812,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-tft7yfto",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 54524
+          },
+          "timing": {
+            "queued_ns": 1793110464947340300,
+            "started_ns": 1793110464948022000,
+            "finished_ns": 1793110465121968400
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-tft7yfto",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 39812
+          },
+          "timing": {
+            "queued_ns": 1793110464948671900,
+            "started_ns": 1793110464949305000,
+            "finished_ns": 1793110467060162000
+          }
+        }
+      ],
+      "repetition": 1
+    },
+    {
+      "mode": "event",
+      "total_ms": 2272.8389,
+      "decision_ms": 197.6016,
+      "check_consume_lag_ms": 1.6741,
+      "scan_state": "completed",
+      "scan_pid": 15064,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-ph6qub7c",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 5264
+          },
+          "timing": {
+            "queued_ns": 1793110467099336100,
+            "started_ns": 1793110467100614000,
+            "finished_ns": 1793110467284567700
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-ph6qub7c",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 15064
+          },
+          "timing": {
+            "queued_ns": 1793110467101264300,
+            "started_ns": 1793110467101264300,
+            "finished_ns": 1793110469356142000
+          }
+        }
+      ],
+      "repetition": 2
+    },
+    {
+      "mode": "barrier",
+      "total_ms": 2182.9436,
+      "decision_ms": 2177.1039,
+      "check_consume_lag_ms": 1993.6013,
+      "scan_state": "completed",
+      "scan_pid": 33840,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-uix0t5tc",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 12660
+          },
+          "timing": {
+            "queued_ns": 1793110469399515800,
+            "started_ns": 1793110469400154500,
+            "finished_ns": 1793110469569516800
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-uix0t5tc",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 33840
+          },
+          "timing": {
+            "queued_ns": 1793110469400794200,
+            "started_ns": 1793110469400794200,
+            "finished_ns": 1793110471561933200
+          }
+        }
+      ],
+      "repetition": 2
+    },
+    {
+      "mode": "barrier",
+      "total_ms": 2136.8937,
+      "decision_ms": 2131.4844,
+      "check_consume_lag_ms": 1952.8425,
+      "scan_state": "completed",
+      "scan_pid": 28648,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-s1dfk5xd",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 38276
+          },
+          "timing": {
+            "queued_ns": 1793110471604720200,
+            "started_ns": 1793110471605558600,
+            "finished_ns": 1793110471772125600
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-s1dfk5xd",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 28648
+          },
+          "timing": {
+            "queued_ns": 1793110471606359700,
+            "started_ns": 1793110471606359700,
+            "finished_ns": 1793110473723289400
+          }
+        }
+      ],
+      "repetition": 3
+    },
+    {
+      "mode": "event",
+      "total_ms": 2175.3419,
+      "decision_ms": 189.4203,
+      "check_consume_lag_ms": 0.5245,
+      "scan_state": "completed",
+      "scan_pid": 38732,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-tewzwlmt",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 41052
+          },
+          "timing": {
+            "queued_ns": 1793110473763774500,
+            "started_ns": 1793110473764408500,
+            "finished_ns": 1793110473941308700
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-tewzwlmt",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 38732
+          },
+          "timing": {
+            "queued_ns": 1793110473765066600,
+            "started_ns": 1793110473765715100,
+            "finished_ns": 1793110475923054000
+          }
+        }
+      ],
+      "repetition": 3
+    }
+  ],
+  "sustained": null,
+  "config": {
+    "repeat": 3,
+    "passes": 512,
+    "epochs": 8,
+    "jobs": 32,
+    "contexts": 4,
+    "negative_control": true,
+    "out": "results/full-runtime-negative-control-2026-10-27.json",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "go": "go version go1.26.5 windows/amd64",
+    "journal": "fsync enabled in all arms",
+    "concurrency": 2,
+    "warmup_per_mode": 1,
+    "corpus_bytes": 8388608
+  },
+  "source_sha256_lf_normalized": {
+    "benchmarks/full_runtime.py": "75522cd6ab7c94a3c5af420f2650d8b957f863a05d0f6160e7ae6d871f00e30d",
+    "benchmarks/scan.py": "efb23f3964567a449bf80386f6ca43c9358b3d4df27118d3f253ea14915a1c65",
+    "cmd/runtime/main.go": "9d78bb9c2e3339e6dc87fb2e467a48a79428a950202df200881b7d0e01ad122e",
+    "python/focus_tool/__init__.py": "4c23a0f93b3277fcbc4ec0d4c783e2de22a4798aa13a276cd9d0e666a3c4bbc9",
+    "python/focus_tool/adapter.py": "4cc280702f98d584258f595005410ad1c680a9604a398aaf23d05ea2ed94dd72",
+    "python/focus_tool/client.py": "a3e57143a7c4bc213e2be14dcb33874dfe0dedde31aa242f1887df931fe993ae",
+    "python/focus_tool/transport.py": "f8259eb4d7e693a89504ba346cee7504fc65d9c36a430a5cc91a2cf7421ae318",
+    "runtime/engine.go": "ba6ef1eea1128865f7acbb2f9eccff6a99b1d5297ad7681f0388173181f375c2",
+    "runtime/engine_test.go": "12a00eb975d7875b781727d22128639098861cd0460b0b3c0fe349b2b495662d",
+    "runtime/journal.go": "c93e3638b86c2e2ddf711baa4bf88f4b88b158a586d94841b47882cba5551bab",
+    "runtime/lock_unix.go": "72010d2ce685fd6e9e550276f3f570cf609af384f73a9a9b66d0a3098110ab5a",
+    "runtime/lock_windows.go": "2bee60f15fd478cc18820a0abda6763c191c2165cacb10c4cf4cfc4aacfa144e",
+    "runtime/process.go": "e7bc511906a2a17a2570eab5db6aaa7c837b50e4845a3d4ab64e7da47df70dab",
+    "runtime/process_test.go": "873499064fed7a633e85088015c027c57fd5b4203089e18a45a635af239199c2",
+    "runtime/python_worker.py": "aef9a4446cc7d6ea4dfaa084faac1d1ec1dfa8a1c2201a17d1548d363ef2e8df",
+    "runtime/types.go": "c875b89006c5cfa61bc3afeb7f7396cce67e2d0d0e0dc3f972d6273d198039f4"
+  },
+  "summary": {
+    "barrier": {
+      "median": 2182.9436,
+      "p95": 2293.2366,
+      "p99": 2293.2366,
+      "min": 2136.8937,
+      "max": 2293.2366
+    },
+    "event": {
+      "median": 2175.3419,
+      "p95": 2272.8389,
+      "p99": 2272.8389,
+      "min": 2130.5228,
+      "max": 2272.8389
+    }
+  }
+}

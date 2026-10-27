@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	goruntime "runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -55,6 +56,12 @@ func clone[T any](value T) T {
 func New(config Config) (*Engine, error) {
 	if config.Concurrency < 1 || config.Capacity < config.Concurrency {
 		return nil, fmt.Errorf("capacity must be >= positive concurrency")
+	}
+	if config.PerRunCapacity == 0 {
+		config.PerRunCapacity = config.Capacity / config.Concurrency
+	}
+	if config.PerRunCapacity < 1 {
+		return nil, fmt.Errorf("per-run capacity must be positive")
 	}
 	executors := make(map[string]Executor, len(config.Executors))
 	for kind, executor := range config.Executors {
@@ -202,18 +209,25 @@ func (e *Engine) Submit(task Task) (Status, error) {
 		return Status{}, fmt.Errorf("negative timeout")
 	}
 	count := 0
+	runCount := 0
 	for _, item := range e.tasks {
 		if !terminal(item.State) {
 			count++
+			if item.Task.Owner == task.Owner {
+				runCount++
+			}
 		}
 	}
 	for _, event := range e.events {
-		if event.Sequence > e.runs[event.Task.Owner].Ack {
-			count++
+		if event.Task.Owner == task.Owner && event.Sequence > run.Ack {
+			runCount++
 		}
 	}
 	if count >= e.config.Capacity {
 		return Status{}, ErrQueueFull
+	}
+	if runCount >= e.config.PerRunCapacity {
+		return Status{}, ErrRunFull
 	}
 	deps := map[string]bool{}
 	for _, id := range task.Dependencies {
@@ -241,7 +255,7 @@ func (e *Engine) Submit(task Task) (Status, error) {
 	if task.Kind == "python" && (task.Python == nil || task.Python.Interpreter == "" || task.Python.Module == "" || task.Python.Function == "") {
 		return Status{}, fmt.Errorf("incomplete Python call")
 	}
-	status := Status{Task: task, State: "queued"}
+	status := Status{Task: task, State: "queued", Timing: Timing{QueuedNS: time.Now().UnixNano()}}
 	if err := e.save(record{Task: &status}); err != nil {
 		return Status{}, err
 	}
@@ -316,11 +330,73 @@ func (e *Engine) Pending(after uint64) []Completion {
 	defer e.mu.Unlock()
 	var result []Completion
 	for _, event := range e.events {
-		if event.Sequence > after && event.Sequence > e.runs[event.Task.Owner].Ack {
+		if event.Sequence > after && event.Sequence > e.runs[event.Task.Owner].Ack && !e.runs[event.Task.Owner].Closed {
 			result = append(result, clone(event))
 		}
 	}
 	return result
+}
+
+// Closed Run results transfer to the journal custodian, retaining facts and Ack.
+// Inspect them explicitly through Events; they no longer enter the live pump.
+func (e *Engine) Archive(owner Owner) ArchiveReceipt {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	receipt := ArchiveReceipt{Owner: owner, Custodian: "run"}
+	if e.runs[owner].Closed {
+		receipt.Custodian = "runtime_archive"
+	}
+	for _, item := range e.tasks {
+		if item.Task.Owner == owner && !terminal(item.State) {
+			receipt.Pending++
+		}
+	}
+	for _, event := range e.events {
+		if event.Task.Owner == owner && event.Sequence > e.runs[owner].Ack {
+			receipt.Unacknowledged++
+		}
+	}
+	return receipt
+}
+
+func (e *Engine) ArchivedEvents(owner Owner, after uint64) []Completion {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	var result []Completion
+	if !e.runs[owner].Closed {
+		return result
+	}
+	for _, event := range e.events {
+		if event.Task.Owner == owner && event.Sequence > after {
+			result = append(result, clone(event))
+		}
+	}
+	return result
+}
+
+func (e *Engine) Stats() Stats {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events)}
+	for _, item := range e.tasks {
+		if item.State == "queued" {
+			stats.Queued++
+		}
+	}
+	for _, event := range e.events {
+		if event.Sequence > e.runs[event.Task.Owner].Ack && !e.runs[event.Task.Owner].Closed {
+			stats.Unacknowledged++
+		}
+	}
+	var mem goruntime.MemStats
+	goruntime.ReadMemStats(&mem)
+	stats.HeapBytes = mem.HeapAlloc
+	if e.journal != nil {
+		if info, err := e.journal.Stat(); err == nil {
+			stats.JournalBytes = info.Size()
+		}
+	}
+	return stats
 }
 
 func (e *Engine) Ack(owner Owner, sequence uint64) error {
@@ -335,6 +411,9 @@ func (e *Engine) Ack(owner Owner, sequence uint64) error {
 	state, ok := e.runs[owner]
 	if !ok {
 		return fmt.Errorf("unknown run")
+	}
+	if state.Closed {
+		return fmt.Errorf("result custody transferred to runtime_archive")
 	}
 	if sequence <= state.Ack {
 		return nil
@@ -389,7 +468,8 @@ func (e *Engine) complete(key string, result Result) error {
 	status := item.Status
 	status.State = result.State
 	status.Result = &result
-	event := Completion{Sequence: e.sequence + 1, Task: item.Task, Result: result}
+	status.Timing.FinishedNS = time.Now().UnixNano()
+	event := Completion{Sequence: e.sequence + 1, Task: item.Task, Result: result, Timing: status.Timing}
 	if err := e.save(record{Task: &status, Event: &event}); err != nil {
 		return err
 	}
@@ -501,6 +581,7 @@ func (e *Engine) dispatch() bool {
 			}
 			status := item.Status
 			status.State = "running"
+			status.Timing.StartedNS = time.Now().UnixNano()
 			if e.save(record{Task: &status}) != nil {
 				return false
 			}

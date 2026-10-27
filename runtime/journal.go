@@ -89,7 +89,7 @@ func (e *Engine) save(item record) error {
 		err = e.journal.Sync()
 	}
 	if err != nil {
-		e.fatal = fmt.Errorf("journal write failed; execution stopped: %w", err)
+		e.fatal = fmt.Errorf("%w; execution stopped: %v", ErrStorageUnknown, err)
 		for _, entry := range e.tasks {
 			if entry.cancel != nil {
 				entry.cancel()

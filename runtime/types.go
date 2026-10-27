@@ -8,9 +8,11 @@ import (
 )
 
 var (
-	ErrClosed    = errors.New("runtime or run is closed")
-	ErrQueueFull = errors.New("runtime capacity exhausted")
-	ErrConflict  = errors.New("task identity already has different parameters")
+	ErrClosed         = errors.New("runtime or run is closed")
+	ErrQueueFull      = errors.New("runtime capacity exhausted")
+	ErrRunFull        = errors.New("run capacity exhausted")
+	ErrStorageUnknown = errors.New("journal write failed; acceptance may be unknown")
+	ErrConflict       = errors.New("task identity already has different parameters")
 )
 
 type Owner struct {
@@ -60,6 +62,30 @@ type Completion struct {
 	Sequence uint64 `json:"sequence"`
 	Task     Task   `json:"task"`
 	Result   Result `json:"result"`
+	Timing   Timing `json:"timing"`
+}
+
+type Timing struct {
+	QueuedNS   int64 `json:"queued_ns"`
+	StartedNS  int64 `json:"started_ns,omitempty"`
+	FinishedNS int64 `json:"finished_ns,omitempty"`
+}
+
+type ArchiveReceipt struct {
+	Owner          Owner  `json:"owner"`
+	Custodian      string `json:"custodian"`
+	Pending        int    `json:"pending_executions"`
+	Unacknowledged int    `json:"unacknowledged_facts"`
+}
+
+type Stats struct {
+	Running        int    `json:"running"`
+	Queued         int    `json:"queued"`
+	Unacknowledged int    `json:"unacknowledged"`
+	Tasks          int    `json:"retained_tasks"`
+	Events         int    `json:"retained_events"`
+	HeapBytes      uint64 `json:"heap_bytes"`
+	JournalBytes   int64  `json:"journal_bytes"`
 }
 
 type Executor interface {
@@ -70,11 +96,12 @@ type ExecutorFunc func(context.Context, Task) Result
 func (f ExecutorFunc) Execute(ctx context.Context, task Task) Result { return f(ctx, task) }
 
 type Config struct {
-	Concurrency   int
-	Capacity      int    // Nonterminal tasks plus unacknowledged terminal events.
-	Journal       string // Empty means memory only. One runtime must own a journal file.
-	Executors     map[string]Executor
-	BeforeExecute func(context.Context, Task) error
+	Concurrency    int
+	Capacity       int    // Global nonterminal task bound, independent of result backlogs.
+	PerRunCapacity int    // Nonterminal tasks + unacked facts per active Run; 0 uses Capacity/Concurrency.
+	Journal        string // Empty means memory only. One runtime must own a journal file.
+	Executors      map[string]Executor
+	BeforeExecute  func(context.Context, Task) error
 }
 
 type RunState struct {
@@ -88,6 +115,7 @@ type Status struct {
 	Task   Task    `json:"task"`
 	State  string  `json:"state"`
 	Result *Result `json:"result,omitempty"`
+	Timing Timing  `json:"timing"`
 }
 
 func terminal(state string) bool {

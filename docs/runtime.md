@@ -40,13 +40,17 @@ finally:
 
 `check_current_authority_and_workspace_lease`、checkpoint 保存以及 ToolMessage 对象构造使用接入方真实实现。适配器本身不导入 LangChain；它返回 `role/tool_call_id/name/content` 字段供现有消息层使用。注册的模型工具必须明确表达“启动后台任务”，accepted 表示提交完成；真实结果经 Run 的事件输入返回。不得把现有同步工具语义静默替换为 accepted，也不得为同一个 call ID 再生成第二条 ToolMessage。
 
-一批提交不保证原子性。某个调用被接收、后续调用因容量或工具注册失败时，批量适配接口仍为每个 call ID 返回一条配对消息：已接收的为 accepted，未接收的为 rejected，避免已执行任务丢失提交回执。
+一批提交不保证原子性。适配接口为每个 call ID 返回一条配对消息：明确接收为 accepted，明确拒绝或本地未发送为 rejected；发送后断连、回执丢失或提交日志写入不确定则为 acceptance_unknown，并携带原 job_id。未知状态不能被解释为“没有执行”。
+
+遇到 acceptance_unknown，应重连后使用 `adapter.reconcile(run, parent_message_id, call_id)` 查询，或以完全相同的父消息、call ID、参数重提；禁止通过换调用 ID 盲目重试写操作。适配器保留不确定调用的注册信息，取消提交等待也不会撤销可能已经发生的接收事实；同一不确定调用在断连客户端上再次遇到“请求未发送”，仍保持 acceptance_unknown。明确服务拒绝与传输不确定分别使用 RemoteRejected 和 TransportError。
 
 每次模型调用必须有稳定的父消息 ID 和 call ID。后台 job ID 由两者确定性计算，并以 Context／Run 为身份作用域。同一身份参数相同时返回既有任务，参数不同时拒绝。一个 Context 只能有一个活动 Run；要开始后继 Run，先关闭旧 Run。
 
 ## 调度与依赖
 
-`runtime.New(Config)` 提供可直接使用的 Go 接口。Concurrency 限制实际执行数；Capacity 同时限制非终态任务与未 ack 的完成事件，慢消费者会收到背压。按 Run 轮转选择任务，跳过依赖或资源阻塞的队首，允许同 Run 的独立任务推进。长期吞吐与尾延迟仍需独立测量。
+`runtime.New(Config)` 提供可直接使用的 Go 接口。Concurrency 限制实际执行数，Capacity 限制全局非终态任务；PerRunCapacity 限制各活动 Run 的“非终态任务＋未 ack 结果”，默认 Capacity／Concurrency。Python 参数名为 `per_run_capacity`，CLI 为 `-per-run-capacity`。一个停止消费的 Run 达到自身额度会收到 ErrRunFull，但其已完成结果不会占用其他 Run 的任务容量。全局执行资源仍共享，不提供正在执行任务的抢占。
+
+按 Run 轮转选择任务，跳过依赖或资源阻塞的队首，允许同 Run 的独立任务推进。完整链路的对照和 1,024 任务持续提交实测见 [边界修复与性能报告](boundaries-and-performance.md)。
 
 依赖必须引用同一 Run、同一计划版本中已提交的任务，因此不允许循环或跨 Run 偷读结果。全部依赖成功后才启动任务；任一依赖失败、取消、skipped 或 unknown，则后继任务记为 skipped。Python 参数可从依赖 JSON 输出绑定，例如：
 
@@ -66,13 +70,17 @@ await adapter.submit(
 
 `Run.revise` 持久化新版本并撤销旧版本的排队／运行任务。旧版本终态仍保存，Run 在决策入口拒收并确认该失效事实。当前版本策略保守地撤销全部旧任务；跨版本保留兼容结果仍属后续优化。
 
-取消状态严格区分 cancel_requested 和 cancelled。排队取消不启动进程；运行中请求取消后，必须等待执行器返回、直接子进程 Wait 回收后才释放执行槽与冲突资源。取消和正常结束竞态允许记录 completed，以真实退出结果为准。`Run.close` 禁止新提交并取消未完成任务；运行时 close 等待活动执行退出。
+取消状态严格区分 cancel_requested 和 cancelled。排队取消不启动进程；运行中请求取消后，必须等待执行器返回、直接子进程 Wait 回收后才释放执行槽与冲突资源。取消和正常结束竞态允许记录 completed，以真实退出结果为准。`Run.close` 禁止新提交并取消未完成任务，同时持久地把剩余结果收尾责任转交给 runtime_archive；运行时 close 等待活动执行退出。
 
 ## 事件、ack 与恢复
 
 完成事件包含全局递增 sequence、完整 Task（含 Context、Run、revision）及 Result。stdio 连接的唯一事件泵从耐久记录读取，再由 RuntimeClient 按 `(context_id, run_id)` 投递到各 Run 的独立 mailbox；结果正文无权改变归属。每个 Run 按事件顺序消费，保存决策 checkpoint 后 ack。不要同时为同一 Run 启动多个消费者。
 
+等待只订阅“邮箱可读”的信号，所有可取消的清理等待完成后，才同步取出事件并交给 Run。取消等待不会取走事件；失效版本的隐式 ack 若被取消，也会把原事件放回队首。已交给调用方但尚未 ack 的事件仍由调用方保管，重连可按持久水位重投。
+
 ack 只允许确认当前 Run 的下一个未消费事件，重复 ack 幂等，越序或跨归属 ack 被拒绝。收到事件、形成终态和已消费是不同事实。重连会重投未 ack 事件；消费者必须使用 sequence／job 身份对外部动作去重。服务退出前仍可能有尚未传输的已落盘事件，下次连接按水位恢复。
+
+关闭 Run 返回含 `custodian=runtime_archive`、pending_executions 和 unacknowledged_facts 的回执。剩余完成／取消事实继续写入同一 journal，保留原 owner、sequence 与 Ack，不伪造消费确认。它们退出活动事件泵，后续通过 `Run.archived_events()` 显式查询，包括关闭前已经 ack 的历史事实；原 Run 的 next_event 和 ack 不再有消费权限。关闭时 pending_executions 可大于零，之后到达的终态由 archive 保管。资源仍等实际退出才释放，unknown 的资源隔离也不会因归档解除。
 
 journal 为 fsync 的 JSONL，每个终态及其完成事件写在同一个 frame。Windows 使用内核 LockFileEx、Unix 使用 flock，防止两个进程同时拥有 journal。重启时截断未完成的最后一帧，完整帧损坏则拒绝启动。运行中或取消中的任务恢复为 unknown，禁止自动重放；其读写资源继续隔离，避免未停止的旧任务与新任务冲突。已确认终态任务重试提交时返回原结果，不再执行副作用。
 
@@ -89,9 +97,11 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 | status | owner、task_id | 获取所属任务的执行状态 |
 | cancel | owner、task_id | 请求取消指定任务 |
 | events | owner、after | 查询该 Run 未 ack 的后续事件 |
+| archive_events | owner、after | 查询已关闭 Run 的完整历史事件，不改变消费水位 |
+| stats | collect（可选） | 排队／活动／未消费数、保留历史数、journal 大小与 Go 堆；collect=true 在采样前触发 GC |
 | ack | owner、sequence | 顺序确认持久消费水位 |
 | authorize | token、allowed、reason | 回答执行前检查；过期 token 失效 |
-| close_run | owner | 停止 Run 的新任务并取消未完成任务 |
+| close_run | owner | 关闭 Run、取消任务，返回向 runtime_archive 转交结果保管权的回执 |
 | close | 无 | 取消并等待活动执行结束，再退出服务 |
 
 ## 运行边界
@@ -100,4 +110,5 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 - Python 工具以 `module + function + kwargs` 执行，支持同步及 async 返回值；结果必须可编码为 JSON。工具 stdout 重定向至 stderr，避免污染协议；单个工具 stdout／stderr 各保留最多 1 MiB，超限形成失败事件。
 - 每个服务实例单独拥有 journal。stdio 连接可集中服务多个 Context；多独立客户端或跨机器分布式服务不在当前协议范围内。
 - journal 研究上限为 128 MiB，超过上限 fail closed，需归档后继续；未实现在线压缩、自动 unknown 清理或通用 exactly-once 副作用。
-- Focus 主仓尚未部署此适配器。实际权限、租约和 checkpoint／ledger 的事务一致性需在主仓接入时验证；独立仓库测试使用真实本地工具与等价 AIMessage 字段，未调用模型 API。
+- Go 仍保留历史任务和事件索引，持续负载中回收后的堆会随历史增长；每 Run 容量隔离没有解决历史索引的内存保留问题。当前不适合宣称无限时长运行，需进一步做分页索引或压缩研究。
+- 已穿过真实 Focus Run worker、权限／租约、PostgreSQL checkpoint／ledger／inbox 做三例小范围联调，见 [真实接入](../integration/focus/README.md)。决策为确定性本地代码；未部署生产 Focus Desktop 或验证 Patrol 重调度，不宣称跨数据库原子事务。
