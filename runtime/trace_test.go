@@ -114,3 +114,20 @@ func TestTracedPythonOutputCapPreservesCancellationPrecedence(t *testing.T) {
 		})
 	}
 }
+
+func TestTruncatedDiagnosticEnvelopeStillObeysLogicalOutputCap(t *testing.T) {
+	python, err := exec.LookPath("python")
+	if err != nil {
+		t.Skip("Python not installed")
+	}
+	directory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(directory, "tools.py"), []byte("def large():\n return 'x' * 20000\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	job := Task{ID: "truncated", Owner: ownerA, Directory: directory, Python: &PythonCall{Interpreter: python, Module: "tools", Function: "large"}}
+	ctx := withExecutionTrace(context.Background(), func(TraceEvent) {}, job)
+	result := (PythonExecutor{Process: ProcessExecutor{OutputLimit: 128}}).Execute(ctx, job)
+	if result.State != "failed" || len(result.Output) > 128 {
+		t.Fatalf("unbounded diagnostic failure: state=%s bytes=%d", result.State, len(result.Output))
+	}
+}

@@ -122,6 +122,13 @@ func (p PythonExecutor) Execute(ctx context.Context, task Task) Result {
 			Version int          `json:"trace_version"`
 		}
 		if err := json.Unmarshal([]byte(result.Output), &frame); err != nil || frame.Version != 1 {
+			limit := p.Process.OutputLimit
+			if limit <= 0 {
+				limit = 1 << 20
+			}
+			if len(result.Output) > limit {
+				result.Output = result.Output[:limit]
+			}
 			if result.State == "completed" {
 				result.State = "failed"
 				result.Error = "Python worker returned invalid diagnostic envelope"
