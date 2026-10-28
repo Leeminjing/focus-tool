@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	goruntime "runtime"
 	"strconv"
@@ -25,25 +26,26 @@ type finished struct {
 }
 
 type Engine struct {
-	mu             sync.Mutex
-	config         Config
-	tasks          map[string]*entry
-	runs           map[Owner]RunState
-	queues         map[Owner][]string
-	owners         []Owner
-	next           int
-	active         int
-	events         []Completion
-	sequence       uint64
-	journal        *journal
-	history        *history
-	fatal          error
-	closing        bool
-	wake           chan struct{}
-	changed        chan struct{}
-	finished       chan finished
-	done           chan struct{}
-	traceOperation string // Set only under mu; used to attribute persistence spans.
+	mu              sync.Mutex
+	config          Config
+	tasks           map[string]*entry
+	runs            map[Owner]RunState
+	queues          map[Owner][]string
+	owners          []Owner
+	next            int
+	active          int
+	events          []Completion
+	sequence        uint64
+	journal         *journal
+	history         *history
+	fatal           error
+	closing         bool
+	wake            chan struct{}
+	changed         chan struct{}
+	finished        chan finished
+	done            chan struct{}
+	traceOperation  string // Set only under mu; used to attribute persistence spans.
+	executorsClosed bool
 }
 
 func taskKey(owner Owner, id string) string {
@@ -509,6 +511,9 @@ func (e *Engine) ArchivedEvents(owner Owner, after uint64) []Completion {
 func (e *Engine) Stats() Stats {
 	defer e.lock("stats", Owner{}, "")()
 	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events), Runs: len(e.runs), QueueOwners: len(e.owners)}
+	if observer, ok := e.config.Executors["python"].(interface{ PoolStats() *PoolStats }); ok {
+		stats.PythonPool = observer.PoolStats()
+	}
 	for _, item := range e.tasks {
 		if item.State == "queued" {
 			stats.Queued++
@@ -778,6 +783,21 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 		returned := time.Now()
 		e.finished <- finished{key: key, result: result, owner: task.Owner, id: task.ID, returned: returned}
 	}()
+	executor := e.config.Executors[task.Kind]
+	if preparer, ok := executor.(PreparingExecutor); ok {
+		start := time.Now()
+		prepared, err := preparer.Prepare(ctx, task)
+		e.traceSpan("executor_prepare", task, "", start)
+		if err != nil {
+			result.Error = err.Error()
+			if ctx.Err() != nil {
+				result.State = "cancelled"
+			}
+			return
+		}
+		defer prepared.Release()
+		executor = prepared
+	}
 	admissionStart := time.Now()
 	if e.config.BeforeExecute != nil {
 		if err := e.config.BeforeExecute(ctx, task); err != nil {
@@ -794,7 +814,7 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 		result = Result{State: "cancelled", Error: ctx.Err().Error()}
 		return
 	}
-	result = e.config.Executors[task.Kind].Execute(ctx, task)
+	result = executor.Execute(ctx, task)
 	if !terminal(result.State) || result.State == "unknown" || result.State == "skipped" {
 		result = Result{State: "failed", Error: "executor returned invalid terminal state"}
 	}
@@ -845,6 +865,16 @@ func (e *Engine) Close(ctx context.Context) error {
 	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if !e.executorsClosed {
+		e.executorsClosed = true
+		for _, executor := range e.config.Executors {
+			if closer, ok := executor.(io.Closer); ok {
+				if err := closer.Close(); err != nil && e.fatal == nil {
+					e.fatal = err
+				}
+			}
+		}
+	}
 	if e.journal != nil {
 		err := e.journal.close()
 		e.journal = nil

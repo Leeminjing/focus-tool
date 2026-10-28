@@ -20,6 +20,11 @@ class ToolDefinition:
     interpreter: str = sys.executable
     resources: tuple = ()  # Pairs of explicit shared resource name and read/write mode.
     timeout_ms: int = 30000
+    reuse: bool = False  # Trusted stateless/leaf contract; never inferred from call arguments.
+
+    def __post_init__(self):
+        if type(self.reuse) is not bool or (self.reuse and self.kind != "python"):
+            raise ValueError("reuse must be a boolean trusted Python-tool declaration")
 
 
 class FocusToolAdapter:
@@ -75,6 +80,8 @@ class FocusToolAdapter:
         if definition.kind == "python":
             task["python"] = {"interpreter": definition.interpreter, "module": definition.module,
                               "function": definition.function, "args": copy.deepcopy(args)}
+            if definition.reuse:
+                task["python"]["reuse"] = True
         elif definition.kind == "process":
             argv = args.get("argv", [])
             if set(args) - {"argv"} or not isinstance(argv, list) or not all(isinstance(part, str) for part in argv):

@@ -19,6 +19,8 @@
 
 2026-10-28 在同一固定 Focus 源码和隔离数据库条件下，对分页／压缩版 runtime 再次通过三例，见 [本轮记录](../../results/focus-retention-integration-2026-10-28.json)。这不扩大下述 Patrol／生产覆盖范围。
 
+常驻池改动后同一链路再分别以默认新进程模式和 `--python-workers 2` 通过三例，见 [默认模式](../../results/python-pool-focus-2026-10-28.json)／[池模式](../../results/python-pool-focus-reuse-2026-10-28.json)。启用该选项也将本地测试工具可信登记为 `reuse=True`，并在关闭后断言池 live／reserved 均为零。这三例验证真实治理与持久化边界；跨调用复用、故障和状态清理另外由核心集成测试覆盖。
+
 | 用例 | 实际验证 |
 |---|---|
 | allowed | Focus Run 提交异步工具，真实 Go／Python 执行器写入独立临时文件；等待中的 Focus graph node 被完成事件唤醒；写入 typed checkpoint、确认 inbox receipt 后才 ack 运行时结果 |

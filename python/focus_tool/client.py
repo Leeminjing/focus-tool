@@ -60,12 +60,14 @@ class RuntimeClient:
 
     @classmethod
     async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0,
-                    max_active_runs=0, segment_bytes=0, cwd=None, authorize=None, trace=None, trace_path=None):
+                    max_active_runs=0, segment_bytes=0, cwd=None, authorize=None, trace=None, trace_path=None,
+                    python_workers=0, python_worker_tasks=256):
         argv = [*command, "-journal", str(journal), "-concurrency", str(concurrency),
                 "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity),
                 "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes), "-require-approval=true"]
         if trace_path is not None:
             argv.extend(["-trace", str(trace_path)])
+        argv.extend(["-python-workers", str(python_workers), "-python-worker-tasks", str(python_worker_tasks)])
         try:
             process = await asyncio.create_subprocess_exec(*argv, cwd=cwd, stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, limit=8 << 20)
@@ -219,10 +221,12 @@ class RuntimeClient:
             mailbox.ready.set()
 
     async def close(self):
+        final_stats = None
         try:
             if not self._closed.is_set():
-                await asyncio.wait_for(self.request("close"), timeout=12)
+                final_stats = await asyncio.wait_for(self.request("close"), timeout=12)
             await asyncio.wait_for(self.process.wait(), timeout=5)
+            return final_stats
         finally:
             if self.process.returncode is None:
                 self.process.kill()

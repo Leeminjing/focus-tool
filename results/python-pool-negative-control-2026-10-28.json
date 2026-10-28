@@ -1,0 +1,209 @@
+{
+  "trials": [
+    {
+      "mode": "barrier",
+      "total_ms": 2002.3649,
+      "decision_ms": 1994.3016,
+      "check_consume_lag_ms": 1816.7674,
+      "scan_state": "completed",
+      "scan_pid": 70692,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-t3tcqxcw",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 61992
+          },
+          "timing": {
+            "queued_ns": 1793170268377638500,
+            "started_ns": 1793170268378674100,
+            "finished_ns": 1793170268540474500
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-t3tcqxcw",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 70692
+          },
+          "timing": {
+            "queued_ns": 1793170268379193500,
+            "started_ns": 1793170268379706200,
+            "finished_ns": 1793170270355405700
+          }
+        }
+      ],
+      "repetition": 1
+    },
+    {
+      "mode": "event",
+      "total_ms": 2018.9451,
+      "decision_ms": 200.862,
+      "check_consume_lag_ms": 1.1745,
+      "scan_state": "completed",
+      "scan_pid": 72200,
+      "final_artifact": "{\"valid\":true}",
+      "events": [
+        {
+          "sequence": 1,
+          "task": {
+            "id": "b458a816c962ea0ee1aeb8cdad03d1e023b8927e4095199f4d961913d81df9b0",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "python",
+            "python": {
+              "interpreter": "C:\\Develop\\python\\python312\\python.exe",
+              "module": "demo_tools",
+              "function": "read_config",
+              "args": {}
+            },
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-kzszhgyr",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"valid\": true}\r\n",
+            "pid": 73616
+          },
+          "timing": {
+            "queued_ns": 1793170270431265300,
+            "started_ns": 1793170270432103400,
+            "finished_ns": 1793170270609091500
+          }
+        },
+        {
+          "sequence": 2,
+          "task": {
+            "id": "355160947a5f1c95d01ea12031d8e5fc3be276b40bf48d7f4ff479a391ac1538",
+            "owner": {
+              "context_id": "A",
+              "run_id": "trial"
+            },
+            "revision": 1,
+            "kind": "process",
+            "command": [
+              "C:\\Develop\\python\\python312\\python.exe",
+              "-u",
+              "D:\\focus-tool\\benchmarks\\scan.py",
+              "512"
+            ],
+            "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-full-trial-kzszhgyr",
+            "timeout_ms": 30000
+          },
+          "result": {
+            "state": "completed",
+            "output": "{\"passes\": 512, \"digest\": \"ea021f0907accf9e8586bd8d022ff61af9177939d95b99609f9f30bbf3078fcf\"}\r\n",
+            "pid": 72200
+          },
+          "timing": {
+            "queued_ns": 1793170270432622200,
+            "started_ns": 1793170270433139500,
+            "finished_ns": 1793170272420570000
+          }
+        }
+      ],
+      "repetition": 1
+    }
+  ],
+  "sustained": null,
+  "config": {
+    "repeat": 1,
+    "passes": 512,
+    "epochs": 8,
+    "jobs": 32,
+    "contexts": 4,
+    "negative_control": true,
+    "out": "results/local/python-pool-negative-regression.json",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "go": "go version go1.26.5 windows/amd64",
+    "journal": "fsync enabled in all arms",
+    "concurrency": 2,
+    "warmup_per_mode": 1,
+    "corpus_bytes": 8388608
+  },
+  "source_sha256_lf_normalized": {
+    "benchmarks/full_runtime.py": "75522cd6ab7c94a3c5af420f2650d8b957f863a05d0f6160e7ae6d871f00e30d",
+    "benchmarks/scan.py": "efb23f3964567a449bf80386f6ca43c9358b3d4df27118d3f253ea14915a1c65",
+    "cmd/runtime/main.go": "79712fbbc206810269658452300b0d2fc6f4fda03e717486f00305cd7ddb4c24",
+    "python/focus_tool/__init__.py": "4c23a0f93b3277fcbc4ec0d4c783e2de22a4798aa13a276cd9d0e666a3c4bbc9",
+    "python/focus_tool/adapter.py": "248e75aa7b63046e00967cdb1b0fd482a9c469792891b2f415737c2c01645db2",
+    "python/focus_tool/client.py": "5951b0d44475354d04f2c6bb615dece8455c50017b2311fd2b149ffc0da34dd6",
+    "python/focus_tool/transport.py": "f8259eb4d7e693a89504ba346cee7504fc65d9c36a430a5cc91a2cf7421ae318",
+    "runtime/durable_unix.go": "8160a1c04111a59770fe51e7088440c19d07514dfc32dc6661490aa36d5cc321",
+    "runtime/durable_windows.go": "335c57e6f912fc5197bdf82e485d8c66462fa308a790c8da391170c7513afe89",
+    "runtime/engine.go": "bb7d3d09bfe317b18c7c5d1c2b6113417daa37852e7a42cb090f5eef5d218d78",
+    "runtime/engine_test.go": "12a00eb975d7875b781727d22128639098861cd0460b0b3c0fe349b2b495662d",
+    "runtime/history.go": "e942bd88c64a4f8a9dc9d6e1b879a3ac0ed72a3808983cebf6cd5d1f3366e6b9",
+    "runtime/history_test.go": "70dc4a73c79bbf29c18541f371d3ce6e05d72fd9ad70eaf960b4f37ac1240169",
+    "runtime/journal.go": "feb6a68b0d7119a3dadbf987da14c1156fa5c80eb9c4966948bf57c0b6aac56b",
+    "runtime/lock_unix.go": "72010d2ce685fd6e9e550276f3f570cf609af384f73a9a9b66d0a3098110ab5a",
+    "runtime/lock_windows.go": "2bee60f15fd478cc18820a0abda6763c191c2165cacb10c4cf4cfc4aacfa144e",
+    "runtime/process.go": "221dda57b3fe6b275d6a1c2b0bd6b04177fc4c752cba26572357c51c2fc91179",
+    "runtime/process_test.go": "873499064fed7a633e85088015c027c57fd5b4203089e18a45a635af239199c2",
+    "runtime/python_pool.go": "047f203945d041a4eceec9260999d8daf09420b14d0950d9016eda7f439b59b8",
+    "runtime/python_pool_test.go": "3e96662115aaa5043c12b7cb22ec915675425f09a2614eacdad852300caf7fa8",
+    "runtime/python_pool_worker.py": "d78ca081bf926d2b54f0bf26b6621fa925f2b7d85e055a913464f00775197ba6",
+    "runtime/python_worker.py": "ea97f3d4083daf05c5c053a08f8c60a539795b2d278d40fda1669b69722800e0",
+    "runtime/recovery.go": "de58d514b1079ab088bc743245185c4c53fb695d2e0ecc8c72765d7cdaae0345",
+    "runtime/trace.go": "e76ce84e24672cc607e98c54d544d3b781975a4879dc5202ddd0ebddb00e98ca",
+    "runtime/trace_test.go": "2a9087001b091aef3580311e93baed4673c049fa0a8c409a1ff02c2d392e385c",
+    "runtime/types.go": "55e3959665be4ad3ebdd65cd936326e1388c0b02d5a2b308abd4fe88f2ffa7a6"
+  },
+  "summary": {
+    "barrier": {
+      "median": 2002.3649,
+      "p95": 2002.3649,
+      "p99": 2002.3649,
+      "min": 2002.3649,
+      "max": 2002.3649
+    },
+    "event": {
+      "median": 2018.9451,
+      "p95": 2018.9451,
+      "p99": 2018.9451,
+      "min": 2018.9451,
+      "max": 2018.9451
+    }
+  }
+}

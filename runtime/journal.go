@@ -248,6 +248,9 @@ func (e *Engine) save(item record) error {
 		}
 		if item.Run != nil {
 			event.Owner = item.Run.Owner
+			if e.traceOperation == "ack" {
+				event.Sequence = item.Run.Ack
+			}
 		}
 		if item.Task != nil {
 			event.Owner = item.Task.Task.Owner

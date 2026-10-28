@@ -36,6 +36,7 @@ type PythonCall struct {
 	Module      string                     `json:"module"`
 	Function    string                     `json:"function"`
 	Args        map[string]json.RawMessage `json:"args"`
+	Reuse       bool                       `json:"reuse,omitempty"` // Trusted registration metadata, never a tool argument.
 }
 
 type Task struct {
@@ -80,20 +81,21 @@ type ArchiveReceipt struct {
 }
 
 type Stats struct {
-	Running        int    `json:"running"`
-	Queued         int    `json:"queued"`
-	Unacknowledged int    `json:"unacknowledged"`
-	Tasks          int    `json:"retained_tasks"`
-	Events         int    `json:"retained_events"`
-	HeapBytes      uint64 `json:"heap_bytes"`
-	JournalBytes   int64  `json:"journal_bytes"`
-	Runs           int    `json:"resident_runs"`
-	QueueOwners    int    `json:"queue_owners"`
-	Unknown        int    `json:"unknown_fences"`
-	Compactions    uint64 `json:"compactions"`
-	CachedTasks    int    `json:"wal_cached_tasks"`
-	CachedEvents   int    `json:"wal_cached_events"`
-	CachedRuns     int    `json:"wal_cached_runs"`
+	Running        int        `json:"running"`
+	Queued         int        `json:"queued"`
+	Unacknowledged int        `json:"unacknowledged"`
+	Tasks          int        `json:"retained_tasks"`
+	Events         int        `json:"retained_events"`
+	HeapBytes      uint64     `json:"heap_bytes"`
+	JournalBytes   int64      `json:"journal_bytes"`
+	Runs           int        `json:"resident_runs"`
+	QueueOwners    int        `json:"queue_owners"`
+	Unknown        int        `json:"unknown_fences"`
+	Compactions    uint64     `json:"compactions"`
+	CachedTasks    int        `json:"wal_cached_tasks"`
+	CachedEvents   int        `json:"wal_cached_events"`
+	CachedRuns     int        `json:"wal_cached_runs"`
+	PythonPool     *PoolStats `json:"python_pool,omitempty"`
 }
 
 // ArchivePage is a bounded snapshot of a closed Run's facts. NextCursor is
@@ -113,6 +115,16 @@ type PageOptions struct {
 
 type Executor interface {
 	Execute(context.Context, Task) Result
+}
+
+// Preparation reserves bounded executor capacity without running caller code.
+// Engine rechecks authority AFTER waiting for that capacity, before Execute.
+type PreparedExecution interface {
+	Executor
+	Release()
+}
+type PreparingExecutor interface {
+	Prepare(context.Context, Task) (PreparedExecution, error)
 }
 type ExecutorFunc func(context.Context, Task) Result
 

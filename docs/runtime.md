@@ -68,6 +68,14 @@ await adapter.submit(
 
 服务默认在每次实际执行前发 authorize 请求，Python 适配器核对工具注册、身份、工作区和参数，然后执行 `before_execute` 回调。回调可同步或异步，拒绝或异常会形成失败事件，不启动工具。缺失适配器授权处理时默认拒绝。直接使用 Go API 时通过 Config.BeforeExecute 接入相同检查；可信独立 Go 实验可以不配置该钩子。
 
+### 可选 Python 常驻池
+
+默认 `python_workers=0`／`-python-workers 0`，仍逐任务启动进程。启用时同时设置 `RuntimeClient.start(..., python_workers=4, python_worker_tasks=256)` 和可信 `ToolDefinition("python", ..., reuse=True)`；CLI 对应 `-python-workers`、`-python-worker-tasks`。后者限制每个 worker 成功执行次数，达到上限后回收替换。普通工具参数不能设置复用元数据；未登记或与登记不符的请求在准入时拒绝。
+
+统一调度器继续管理任务队列和资源。执行器先等待并独占一个池槽，此步骤不启动解释器、不替换进程、不发送代码；随后才调用现有权限／租约复核，再执行工具。池在所有解释器绝对调用路径和工作区之间共用总上限，每个 worker 一次执行一个任务。一个 Engine 拥有池；关闭时等待活动执行，再回收闲置 worker、管道与读写协程。`close` 返回最终 stats，成功清理后 `python_pool.live` 和 `reserved` 均为零。
+
+worker 生命周期独立于单次任务上下文。取消、异常、崩溃、输出超限或协议错误后终止并实际 Wait 回收，不自动重放失败调用；旧任务的迟到取消不能终止后继调用。复用成功以函数完成及可信工具的协作清理契约为依据：模块命名空间、cwd／环境／输出被清理，后台线程或 pending asyncio task 不得残留。共享标准库／扩展全局状态、原始协议描述符、外部后代等不属于通用隔离能力，要求全新进程的工具继续使用默认模式。完整边界见 [复用合同](python-pool.md)。WAL、checkpoint、ack 和 unknown 资源隔离语义不变。
+
 诊断追踪默认关闭。Go 可配置 `Config.Trace`，CLI 使用 `-trace <新的 JSONL 路径>`；Python `RuntimeClient.start` 可传 `trace_path` 和同步 `trace` 回调。诊断缓冲不 fsync、不替代执行事实或消费回执。子进程的内部计时帧会在 Go 执行器内解包，原结果与归属不变；取消仍等待实际退出。阶段定义及独立基准见 [短工具测量合同](short-tools-method.md)。
 
 `Run.revise` 持久化新版本并撤销旧版本的排队／运行任务。旧版本终态仍保存，Run 在决策入口拒收并确认该失效事实。当前版本策略保守地撤销全部旧任务；跨版本保留兼容结果仍属后续优化。
@@ -110,7 +118,7 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 | ack | owner、sequence | 顺序确认持久消费水位 |
 | authorize | token、allowed、reason | 回答执行前检查；过期 token 失效 |
 | close_run | owner | 关闭 Run、取消任务，返回向 runtime_archive 转交结果保管权的回执 |
-| close | 无 | 取消并等待活动执行结束，再退出服务 |
+| close | 无 | 取消并等待活动执行结束，回收执行器并返回最终 stats，再退出服务 |
 
 ## 运行边界
 

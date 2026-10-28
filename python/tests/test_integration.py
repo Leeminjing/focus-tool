@@ -71,11 +71,13 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 await client.close()
         self.directory.cleanup()
 
-    async def start(self, *, journal="events.jsonl", hook=None, concurrency=2, capacity=16, trace_path=None, trace=None):
+    async def start(self, *, journal="events.jsonl", hook=None, concurrency=2, capacity=16, trace_path=None, trace=None,
+                    python_workers=0, allow_reuse=False):
         client = await RuntimeClient.start([str(self.binary)], journal=self.workspace / journal,
-                                           concurrency=concurrency, capacity=capacity, trace_path=trace_path, trace=trace)
+                                           concurrency=concurrency, capacity=capacity, trace_path=trace_path, trace=trace,
+                                           python_workers=python_workers)
         self.clients.append(client)
-        tools = {name: ToolDefinition("python", module="tools", function=function)
+        tools = {name: ToolDefinition("python", module="tools", function=function, reuse=allow_reuse)
                  for name, function in {"start_check": "read_config", "start_repair": "repair_config",
                                         "start_echo": "echo", "start_increment": "increment",
                                         "start_failure": "fail", "start_once": "append_once",
@@ -357,6 +359,48 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(row["duration_ns"] >= 0 for row in rows))
         self.assertTrue(any(row["phase"] == "client_receive" and row["sequence"] == event["sequence"] for row in client_trace))
         self.assertTrue(any(row["phase"] == "client_request" and row["operation"] == "ack" for row in client_trace))
+
+    async def test_worker_pool_reuses_only_registered_tools_and_keeps_fresh_mode(self):
+        client, adapter = await self.start(python_workers=2, allow_reuse=True)
+        run = await client.open_run("A", "pool")
+        pids = []
+        for number in range(12):
+            value = {"number": number, "integer": 9007199254740993}
+            await adapter.submit(run, parent_message_id="m", call_id=str(number), name="start_echo", args={"value": value})
+            event = await self.event(run)
+            self.assertEqual(json.loads(event["result"]["output"]), {"value": value})
+            pids.append(event["result"]["pid"])
+            await run.ack(event)
+        self.assertEqual(len(set(pids)), 1)
+        stats = (await client.request("stats"))["python_pool"]
+        self.assertEqual(stats["started"], 1)
+        self.assertLessEqual(stats["peak_live"], 2)
+        adapter.tools["start_isolated"] = ToolDefinition("python", module="tools", function="echo", reuse=False)
+        isolated = []
+        for number in range(2):
+            await adapter.submit(run, parent_message_id="fresh", call_id=str(number), name="start_isolated", args={"value": number})
+            event = await self.event(run)
+            isolated.append(event["result"]["pid"])
+            await run.ack(event)
+        self.assertNotEqual(isolated[0], isolated[1])
+        self.assertNotIn(pids[0], isolated)
+
+    async def test_call_arguments_and_raw_submission_cannot_opt_into_pool(self):
+        client, adapter = await self.start(python_workers=2)
+        run = await client.open_run("A", "no-opt-in")
+        for number in range(2):
+            await adapter.submit(run, parent_message_id="m", call_id=str(number), name="start_echo", args={"value": {"reuse": True}})
+            event = await self.event(run)
+            self.assertNotIn("reuse", event["task"]["python"])
+            await run.ack(event)
+        await client.request("submit", task={"id": "raw-reuse", "owner": run.owner, "revision": 1, "kind": "python",
+            "directory": str(self.workspace), "python": {"interpreter": sys.executable, "module": "tools", "function": "append_once", "args": {}, "reuse": True}})
+        event = await self.event(run)
+        self.assertEqual(event["result"]["state"], "failed")
+        self.assertNotIn("pid", event["result"])
+        self.assertFalse((self.workspace / "counter.txt").exists())
+        self.assertEqual((await client.request("stats"))["python_pool"]["started"], 0)
+        await run.ack(event)
 
 
 if __name__ == "__main__":

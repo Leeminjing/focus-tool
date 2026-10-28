@@ -43,7 +43,7 @@ def archive_trace(source, destination):
         shutil.copyfileobj(reader, writer)
 
 
-async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, tracing, warmup):
+async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, tracing, warmup, mode="fresh"):
     with tempfile.TemporaryDirectory(prefix="focus-short-tools-") as name:
         directory = Path(name)
         shutil.copyfile(ROOT / "benchmarks/short_tools_workload.py", directory / "short_tools_fixture.py")
@@ -57,11 +57,12 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
         def emit(event):
             stream.write(json.dumps(event, separators=(",", ":"), ensure_ascii=False) + "\n")
 
+        lifecycle_start = time.perf_counter_ns()
         client = await RuntimeClient.start([str(binary)], journal=directory / "runtime.jsonl",
             concurrency=4, capacity=64, per_run_capacity=16, max_active_runs=8,
             segment_bytes=segment_bytes, trace=emit if tracing else None,
-            trace_path=go_trace if tracing else None)
-        adapter = FocusToolAdapter(client, {name: ToolDefinition("python", module="short_tools_fixture", function=name)
+            trace_path=go_trace if tracing else None, python_workers=4 if mode == "pool" else 0)
+        adapter = FocusToolAdapter(client, {name: ToolDefinition("python", module="short_tools_fixture", function=name, reuse=True)
             for name in NAMES}, workspace=directory,
             before_execute=lambda task: Path(task["directory"]).resolve() == directory.resolve())
         runs = []
@@ -87,7 +88,7 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
                 await enqueue(index)
             for number in range(count):
                 event = await asyncio.wait_for(run.next_event(), 60)
-                consumed = time.time_ns()
+                consumed, consumed_mono = time.time_ns(), time.perf_counter_ns()
                 assert event["result"]["state"] == "completed", event
                 wall, mono, index = starts.pop(event["task"]["id"])
                 value = json.loads(event["result"]["output"])
@@ -103,7 +104,7 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
                 await asyncio.to_thread(write_durable, directory / (run.owner["context_id"] + "-action.json"), totals)
                 action_end = time.time_ns()
                 action_ns = time.perf_counter_ns() - action_mono
-                ack_start = time.time_ns()
+                ack_start, ack_mono = time.time_ns(), time.perf_counter_ns()
                 await run.ack(event)
                 end_wall, end_mono = time.time_ns(), time.perf_counter_ns()
                 record = {"phase": "bench_job", "clock": "python_client", "measured": measured,
@@ -112,6 +113,7 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
                     "consumed_ns": consumed, "checkpoint_start_ns": cp_wall, "checkpoint_end_ns": checkpoint_end,
                     "checkpoint_ns": checkpoint_ns, "action_start_ns": action_wall, "action_end_ns": action_end,
                     "action_ns": action_ns, "ack_start_ns": ack_start, "timing": event["timing"]}
+                record.update(submit_to_consume_ns=consumed_mono-mono, consumer_ns=end_mono-consumed_mono, ack_ns=end_mono-ack_mono)
                 records.append(record)
                 emit(record)
                 if number + depth < count:
@@ -120,7 +122,9 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
 
         try:
             runs = [await client.open_run(f"C{n}", "run") for n in range(contexts)]
+            cold_start = time.perf_counter_ns()
             await asyncio.gather(*(produce(run, warmup // contexts, "warmup", False) for run in runs))
+            warmup_ns = time.perf_counter_ns() - cold_start
             before = await client.request("stats")
             start_wall, start = time.time_ns(), time.perf_counter_ns()
             artifacts = await asyncio.gather(*(produce(run, per_context, "measured", True) for run in runs))
@@ -135,13 +139,17 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             for run in runs:
                 await run.close()
         finally:
-            await client.close()
+            shutdown = await client.close()
             stream.close()
+        lifecycle_ns = time.perf_counter_ns() - lifecycle_start
         assert client.process.returncode == 0, client.stderr.decode(errors="replace")
         final = {kind: sum(artifact[kind] for artifact in artifacts) for kind in expected}
         target = {kind: expected[kind] * jobs // 3 for kind in expected}
         assert final == target, (final, target)
         assert after["unacknowledged"] == after["retained_tasks"] == 0, after
+        if mode == "pool":
+            assert after["python_pool"]["peak_live"] <= 4
+            assert shutdown["python_pool"]["live"] == shutdown["python_pool"]["reserved"] == 0, shutdown
         destination = output.parent
         client_name = identity + ".client.jsonl.gz"
         archive_trace(py_trace, destination / client_name)
@@ -149,33 +157,36 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
         if tracing:
             go_name = identity + ".go.jsonl.gz"
             archive_trace(go_trace, destination / go_name)
-        return {"id": identity, "contexts": contexts, "jobs": jobs, "segment_bytes": segment_bytes,
+        return {"id": identity, "contexts": contexts, "jobs": jobs, "segment_bytes": segment_bytes, "execution_mode": mode,
                 "tracing": tracing, "elapsed_ns": elapsed, "throughput_per_s": jobs * 1e9 / elapsed,
                 "compactions": after["compactions"] - before["compactions"], "before": before, "after": after,
                 "final_artifact": final, "final_artifact_readback": True, "client_trace": client_name, "go_trace": go_name,
+                "warmup_ns": warmup_ns, "lifecycle_ns": lifecycle_ns, "shutdown": shutdown,
                 "jobs_ns": [record["duration_ns"] for record in records if record["measured"]]}
 
 
 async def experiment(args, binary, output):
-    cases = [(contexts, segment) for contexts in (1, 4) for segment in (64 << 10, 8 << 20)]
+    modes = ("fresh", "pool") if args.pool_comparison else ("fresh",)
+    cases = [(contexts, segment, mode) for contexts in (1, 4) for segment in (64 << 10, 8 << 20) for mode in modes]
     trials = []
     for repetition in range(args.repeat):
         order = cases[repetition % len(cases):] + cases[:repetition % len(cases)]
-        for contexts, segment in order:
-            identity = f"r{repetition+1}-c{contexts}-s{segment}"
+        for contexts, segment, mode in order:
+            identity = f"r{repetition+1}-c{contexts}-s{segment}-{mode}"
             result = await trial(binary, output, identity, contexts=contexts, jobs=args.jobs,
-                                 segment_bytes=segment, tracing=True, warmup=args.warmup)
+                                 segment_bytes=segment, tracing=True, warmup=args.warmup, mode=mode)
             trials.append(result)
             print(identity, f"{result['throughput_per_s']:.2f}/s, compactions={result['compactions']}", flush=True)
     # A separately labelled control estimates perturbation of tracing itself.
     controls = []
     for repetition in range(args.repeat):
-        for tracing in ((False, True) if repetition % 2 == 0 else (True, False)):
-            identity = f"overhead-r{repetition+1}-trace{int(tracing)}"
-            result = await trial(binary, output, identity, contexts=4, jobs=args.control_jobs,
-                                 segment_bytes=8 << 20, tracing=tracing, warmup=args.warmup)
-            controls.append(result)
-            print(identity, f"{result['throughput_per_s']:.2f}/s", flush=True)
+        for mode in modes:
+            for tracing in ((False, True) if repetition % 2 == 0 else (True, False)):
+                identity = f"overhead-r{repetition+1}-trace{int(tracing)}-{mode}"
+                result = await trial(binary, output, identity, contexts=4, jobs=args.control_jobs,
+                                     segment_bytes=8 << 20, tracing=tracing, warmup=args.warmup, mode=mode)
+                controls.append(result)
+                print(identity, f"{result['throughput_per_s']:.2f}/s", flush=True)
     return {"trials": trials, "tracing_controls": controls}
 
 
@@ -186,6 +197,7 @@ def main():
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--warmup", type=int, default=24)
     parser.add_argument("--control-jobs", type=int, default=120)
+    parser.add_argument("--pool-comparison", action="store_true", help="interleave fresh and bounded pooled execution with identical eligible tools")
     args = parser.parse_args()
     if min(args.jobs, args.repeat, args.warmup, args.control_jobs) < 1 or any(n % 12 for n in (args.jobs, args.warmup, args.control_jobs)):
         parser.error("positive counts; jobs, warmup and control-jobs must be multiples of 12")

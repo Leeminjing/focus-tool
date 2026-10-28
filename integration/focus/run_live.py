@@ -19,7 +19,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[2]
 
 
-async def exercise(focus_root, binary, workspace, dsn):
+async def exercise(focus_root, binary, workspace, dsn, python_workers=0):
     # Import only after the isolated database is configured. No dotenv/config
     # discovery or desktop application startup is used.
     os.environ["FOCUS_DATABASE_URL"] = dsn.replace("postgresql://", "postgresql+asyncpg://")
@@ -71,7 +71,8 @@ async def exercise(focus_root, binary, workspace, dsn):
     saver = await create_checkpointer(config)
     await saver.setup()
     cases = []
-    client = await RuntimeClient.start([str(binary)], journal=workspace / "runtime.jsonl", concurrency=2, capacity=16)
+    client = await RuntimeClient.start([str(binary)], journal=workspace / "runtime.jsonl", concurrency=2, capacity=16,
+                                       python_workers=python_workers)
     try:
         for case in ("allowed", "permission_revoked", "lease_released"):
             case_root = workspace / case
@@ -155,7 +156,7 @@ async def exercise(focus_root, binary, workspace, dsn):
             # A connection may carry several adapters over time; prior case is
             # already drained and closed before assigning the next registration.
             client.authorize = None
-            adapter = FocusToolAdapter(client, {"start_write": ToolDefinition("python", module="integration_tool", function="write_output", interpreter=sys.executable)},
+            adapter = FocusToolAdapter(client, {"start_write": ToolDefinition("python", module="integration_tool", function="write_output", interpreter=sys.executable, reuse=python_workers > 0)},
                                        workspace=case_root, before_execute=admission)
             inbox = AgentInbox(sessions, saver)
             inbox_middleware = DurableInboxMiddleware(inbox)
@@ -268,7 +269,10 @@ async def exercise(focus_root, binary, workspace, dsn):
             if case != "lease_released":
                 await leases.release(grant.lease_id, grant.fencing_token)
     finally:
-        await client.close()
+        final_stats = await client.close()
+        if python_workers:
+            assert final_stats["python_pool"]["live"] == 0
+            assert final_stats["python_pool"]["reserved"] == 0
         await dispose_checkpointer(saver)
         await engine.dispose()
     return cases
@@ -281,6 +285,7 @@ def command(*args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--focus-root", type=Path, required=True)
+    parser.add_argument("--python-workers", type=int, default=0)
     parser.add_argument("--out", type=Path, default=ROOT / "results/local/focus-integration.json")
     args = parser.parse_args()
     focus_root = args.focus_root.resolve()
@@ -306,8 +311,9 @@ def main():
             subprocess.run(["go", "build", "-o", str(binary), "./cmd/runtime"], cwd=ROOT, check=True)
             if sys.platform == "win32":
                 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            cases = asyncio.run(exercise(focus_root, binary, workspace, "postgresql://postgres@127.0.0.1:" + port + "/focus_tool_integration"))
+            cases = asyncio.run(exercise(focus_root, binary, workspace, "postgresql://postgres@127.0.0.1:" + port + "/focus_tool_integration", args.python_workers))
         report = {"focus_commit": commit, "focus_root": str(focus_root), "python": sys.version,
+                  "python_workers": args.python_workers,
                   "decision_source": "deterministic local StateGraph; no model inference", "cases": cases, "passed": True}
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

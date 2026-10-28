@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 import gzip
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -54,11 +55,18 @@ def analyze_trial(directory, trial):
     throughput = len(jobs) * 1e9 / window["duration_ns"]
     assert math.isclose(throughput, trial["throughput_per_s"], rel_tol=1e-12), "inconsistent throughput"
     result = {"id": trial["id"], "contexts": trial["contexts"], "segment_bytes": trial["segment_bytes"],
+              "execution_mode": trial.get("execution_mode", "fresh"),
               "tracing": trial["tracing"], "throughput_per_s": throughput,
               "e2e_ms": distribution([row["duration_ns"] / 1e6 for row in jobs])}
     if not trial["tracing"]:
         return result
     go = read_trace(directory / trial["go_trace"])
+    calls = [row for row in go if row["phase"] == "python_call"]
+    warmup_keys = {key(row) for row in client if row["phase"] == "bench_job" and not row["measured"]}
+    cold = [row for row in calls if key(row) in warmup_keys and not row.get("reused", False)]
+    result["cold_calls_ms"] = distribution([row["duration_ns"] / 1e6 for row in cold])
+    result["worker_start_count"] = sum(row["phase"] == "process_start" for row in go)
+    result["worker_pid_count"] = len({row["pid"] for row in calls if row.get("pid")})
     indexed = defaultdict(list)
     for event in go:
         indexed[key(event)].append(event)
@@ -85,9 +93,12 @@ def analyze_trial(directory, trial):
         accept = one(events, "wal_sync", "queued")
         assigned = one(events, "dispatch_assigned")
         admission = one(events, "admission")
-        launch = one(events, "process_start")
+        launches = [event for event in events if event["phase"] == "process_start"]
+        call_events = [event for event in events if event["phase"] == "python_call"]
+        assert len(call_events) <= 1, ("duplicate Python call timing", key(row))
+        launch = call_events[0] if call_events else one(events, "process_start")
         body = one(events, "tool_body")
-        reaped = one(events, "process_wait")
+        reaped = [event for event in events if event["phase"] == "process_wait"]
         durable = one(events, "wal_sync", "completed")
         values = {
             "submit_to_durable_accept": accept["end_ns"] - row["start_ns"],
@@ -99,24 +110,38 @@ def analyze_trial(directory, trial):
             "tool_body": body["duration_ns"],
             "tool_return_to_durable_result": durable["end_ns"] - body["end_ns"],
             "durable_result_to_consume": row["consumed_ns"] - durable["end_ns"],
-            "consumer_checkpoint_action_ack": row["end_ns"] - row["consumed_ns"],
+            "consumer_checkpoint_action_ack": row.get("consumer_ns", row["end_ns"] - row["consumed_ns"]),
             "checkpoint": row["checkpoint_ns"], "effective_action": row["action_ns"],
-            "ack_roundtrip": row["end_ns"] - row["ack_start_ns"],
+            "ack_roundtrip": row.get("ack_ns", row["end_ns"] - row["ack_start_ns"]),
             "tool_end_to_effective_action": row["action_end_ns"] - body["end_ns"],
-            "process_start_api": launch["duration_ns"],
-            "tool_end_to_process_reaped": reaped["end_ns"] - body["end_ns"],
+            "process_start_api": sum(event["duration_ns"] for event in launches),
         }
-        for phase in ("worker_bootstrap", "module_import", "result_encode", "completion_handoff"):
+        if reaped:
+            values["tool_end_to_process_reaped"] = reaped[0]["end_ns"] - body["end_ns"]
+        bootstraps = [event for event in events if event["phase"] == "worker_bootstrap"]
+        values["worker_bootstrap"] = sum(event["duration_ns"] for event in bootstraps)
+        if call_events:
+            values["python_call_total"] = launch["duration_ns"]
+            values["python_call_minus_body_signed"] = launch["duration_ns"] - body["duration_ns"]
+        if "submit_to_consume_ns" in row:
+            values["submit_to_consume"] = row["submit_to_consume_ns"]
+            values["runtime_and_bridge_non_body"] = row["submit_to_consume_ns"]-body["duration_ns"]
+        for phase in ("module_import", "result_encode", "completion_handoff"):
             values[phase] = one(events, phase)["duration_ns"]
         # Attribute Run-only ack persistence using its consumer interval.
-        ack_events = [event for event in go if owner(event) == owner(row) and event.get("operation") == "ack"
-                      and event["start_ns"] >= row["ack_start_ns"] and event["end_ns"] <= row["end_ns"]]
+        ack_candidates = [event for event in go if owner(event) == owner(row) and event.get("operation") == "ack"]
+        identified = any(event.get("sequence", 0) for event in ack_candidates if event["phase"] == "wal_sync")
+        ack_events = [event for event in ack_candidates if
+                      (event.get("sequence") == row["sequence"] if identified else
+                       event["start_ns"] >= row["ack_start_ns"] and event["end_ns"] <= row["end_ns"])]
         for phase in ("wal_sync", "wal_encode", "wal_append", "wal_fsync"):
             spans = [event for event in events + ack_events if event["phase"] == phase]
             assert len(spans) == 4, ("missing/duplicate durable mutation diagnostics", phase, len(spans), key(row))
             values[phase + "_per_job"] = sum(event["duration_ns"] for event in spans)
         for phase, value in values.items():
-            assert value >= 0, ("clock/order anomaly", trial["id"], key(row), phase, value)
+            cross_process = {"submit_to_durable_accept", "python_startup_to_function", "tool_return_to_durable_result",
+                             "durable_result_to_consume", "tool_end_to_effective_action", "python_call_minus_body_signed"}
+            assert value >= 0 or phase in cross_process, ("clock/order anomaly", trial["id"], key(row), phase, value)
             stages[phase].append(value / 1e6)
             if phase in ("python_startup_to_function", "tool_body", "tool_end_to_effective_action"):
                 by_tool[row.get("tool", "unspecified")][phase].append(value / 1e6)
@@ -170,6 +195,8 @@ def analyze_trial(directory, trial):
             if blocked:
                 cross_waits.append(blocked / 1e6)
     result.update({"stages_ms": {name: distribution(values) for name, values in stages.items()},
+        "signed_cross_clock_quality": {name: {"negative_count": sum(value < 0 for value in stages[name]), "min_ms": min(stages[name])}
+            for name in ("submit_to_durable_accept", "python_startup_to_function", "tool_return_to_durable_result", "durable_result_to_consume", "tool_end_to_effective_action", "python_call_minus_body_signed") if name in stages},
         "by_tool_ms": {name: {phase: distribution(values) for phase, values in metrics.items()} for name, metrics in by_tool.items()},
         "job_e2e_by_compaction_overlap_ms": {name: distribution(values) for name, values in overlap_groups.items()},
         "request_rtt_and_queue_ms": {op: {name: distribution(values) for name, values in groups.items()} for op, groups in requests.items()},
@@ -186,6 +213,8 @@ def analyze(report_path):
     trials = [analyze_trial(report_path.parent, trial) for trial in report["trials"]]
     controls = [analyze_trial(report_path.parent, trial) for trial in report["tracing_controls"]]
     return {"quantiles": "nearest-rank; milliseconds; per-trial distributions, no claim of statistical significance",
+            "clock_note": "Go short intervals may quantize to zero on this Windows host; call-minus-body and cross-process differences are signed diagnostics. Use client monotonic pipeline metrics for speed comparisons.",
+            "analysis_source_sha256_lf_normalized": hashlib.sha256(Path(__file__).read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
             "trials": trials, "tracing_controls": controls}
 
 

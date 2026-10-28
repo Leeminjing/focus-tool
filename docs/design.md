@@ -29,7 +29,7 @@ Focus 普通工具回合已有并发；主要对照组应是并发等齐。源�
 | Context Run | 消费所属结果、更新计划、提交后续任务或取消请求 | `python/focus_tool/client.py` 的 Run；多 Context、版本更新、关闭、checkpoint 后 ack |
 | Focus 工具适配层 | 将 Run 的工具调用转换为统一任务，维护调用身份映射并衔接权限与工作区准入 | `python/focus_tool/adapter.py`；接收 dict／AIMessage.tool_calls，稳定身份、注册工具和实际执行前回调；尚未部署到 Focus 主仓 |
 | 自研统一调度器 | 跨 Context 有界队列、依赖、资源约束、公平性、背压及取消协调 | `runtime/engine.go`；按 Run 轮转、同 Context 单活动 Run、依赖绑定、读写资源、任务和未消费结果背压 |
-| Python 工具执行器 | 在相应 Python 环境内执行工具，回报真实结果与取消能力 | `runtime/python_worker.py` 与 PythonExecutor；真实模块／函数调用，支持同步和 async 工具、结构化结果及异常 |
+| Python 工具执行器 | 在相应 Python 环境内执行工具，回报真实结果与取消能力 | PythonExecutor 保留新进程默认模式；`runtime/python_pool.go` 与 resident worker 提供可信工具可选有界复用、执行前准入、异常回收和状态清理 |
 | 本地进程执行器 | 启动进程、采集输出、等待退出、确认取消并释放执行槽 | `runtime/process.go`；直接叶子进程、超时、输出限额、stderr 错误信息与 Wait 后取消确认 |
 | 结果事件与归属路由 | 将 A、B 的执行事实分别投递到所属 Run，支持结果消费与恢复 | Engine 的事件日志／Pending、stdio 事件泵、Python 按 owner 分发；顺序 ack、未消费重投及崩溃 unknown 处理 |
 
@@ -77,9 +77,9 @@ Runner 只限制同时执行的直接子进程数，未提供跨 Context 公平�
 | M5（小范围真实联调通过，生产部署待做） | Focus Python 适配与受控工具集 | 实际 Run worker、权限、租约、PostgreSQL checkpoint／ledger／inbox 通过允许执行、权限撤销与租约释放三例；Desktop HTTP、Patrol 重调度及生产迁移未覆盖 |
 | M6 | 本地模型与真实搜索/测试任务 | 计入额外推理时间与次数；比较正确完成率和任务总耗时 |
 
-在有工作负载证据后再研究进程复用、只读缓存、跨 Context 合并，以及模型流中的推测派发。应加入“早结果不改变方向”的负对照和“过度唤醒反而变慢”的场景，防止只选能获益的任务。
+进程复用已按短工具测量实现为可选有界池；只读缓存、跨 Context 合并及模型流中的推测派发仍待研究。应加入“早结果不改变方向”的负对照和“过度唤醒反而变慢”的场景，防止只选能获益的任务。
 
-2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)。[短工具阶段实测](short-tools-results.md) 已覆盖单／多 Context、54 次压缩和追踪对照，下一项选择有界 Python worker 池；压缩持锁与 Patrol 生命周期恢复仍需独立推进，不能将有限实验通过解释为生产长期性能已解决。
+2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)。[短工具阶段实测](short-tools-results.md) 选出的有界 Python worker 池现已实现并完成 [同负载对照](python-pool-results.md)，覆盖冷启动、单／多 Context、120 次压缩与追踪控制。下一项研究压缩持锁和安全切换；之后补 Patrol 跨 Run inbox 桥接、checkpoint／ack 重启点与 queued 恢复握手。两项尚未实现，不能将本轮短工具收益解释为生产 Patrol 已接通或长期性能已解决。
 
 ## Focus 接入所需设计
 

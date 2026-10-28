@@ -24,6 +24,7 @@ class ShortToolAnalysisTests(unittest.TestCase):
         go = [event("wal_sync", 8, 10, state="queued"), event("wal_sync", 11, 12, state="running"),
               event("wal_sync", 55, 60, state="completed"), event("dispatch_assigned", 11, 11),
               event("admission", 12, 14), event("process_start", 15, 16), event("tool_body", 40, 42),
+              event("python_call", 15, 49, duration_ns=1),
               event("worker_bootstrap", 20, 30), event("module_import", 31, 39), event("result_encode", 43, 44),
               event("completion_handoff", 50, 51), event("process_wait", 16, 49), event("wal_sync", 94, 95, operation="ack", task_id=""),
               event("compaction", 80, 90, owner={"context_id": "A", "run_id": "a"}, state="completed"),
@@ -52,12 +53,25 @@ class ShortToolAnalysisTests(unittest.TestCase):
                 with gzip.open(directory / path, "wt", encoding="utf-8") as stream:
                     for row in rows:
                         stream.write(json.dumps(row) + "\n")
-            report = analyze_trial(directory, {"id": "synthetic", "contexts": 4, "segment_bytes": 64,
+            trial = {"id": "synthetic", "contexts": 4, "segment_bytes": 64,
                 "jobs": 1, "tracing": True, "elapsed_ns": 100, "throughput_per_s": 10000000, "compactions": 1,
-                "client_trace": "client.gz", "go_trace": "go.gz"})
+                "client_trace": "client.gz", "go_trace": "go.gz"}
+            report = analyze_trial(directory, trial)
+            # Ack identities remain usable when wall endpoints do not nest in
+            # the client's interval. Legacy unlabelled traces above still work.
+            for row in go:
+                if row.get("operation") == "ack" and row["phase"].startswith("wal_"):
+                    row.update(sequence=1, start_ns=row["start_ns"]-40, end_ns=row["end_ns"]-40)
+            with gzip.open(directory / "go.gz", "wt", encoding="utf-8") as stream:
+                for row in go:
+                    stream.write(json.dumps(row)+"\n")
+            identified = analyze_trial(directory, trial)
+            self.assertEqual(identified["stages_ms"]["wal_sync_per_job"]["mean"], 9 / 1e6)
         self.assertEqual(report["request_rtt_and_queue_ms"]["ack"]["other_context_compaction_in_prehandle"]["mean"], 10 / 1e6)
         self.assertEqual(report["other_context_compaction_in_lock_wait_ms"]["count"], 0)
         self.assertEqual(report["stages_ms"]["wal_sync_per_job"]["mean"], 9 / 1e6)
+        self.assertEqual(report["stages_ms"]["python_call_minus_body_signed"]["mean"], -1 / 1e6)
+        self.assertEqual(report["signed_cross_clock_quality"]["python_call_minus_body_signed"]["negative_count"], 1)
         submit = report["request_rtt_and_queue_ms"]["submit"]
         self.assertEqual(submit["request_start_to_server_handle"]["count"], 1)
         self.assertEqual(submit["server_handle_before_drain_end"]["count"], 1)

@@ -47,6 +47,17 @@ python benchmarks/analyze_short_tools.py results/local/short-tools/report.json -
 
 该基准覆盖单／多 Context、真实多轮压缩、追踪开／关对照及读回核验的耐久后续产物；每轮原始轨迹以 gzip JSONL 保存。阶段、时钟和统计范围见 [测量合同](docs/short-tools-method.md)。
 
+已新增可选的有界 Python 常驻 worker 池，默认仍为每任务新进程。仅在可信工具登记 `ToolDefinition(..., reuse=True)` 且启动客户端设置 `python_workers=4` 时复用；普通调用参数无权开启。每次执行仍复核权限与租约，取消／故障会回收 worker，失败不自动重放。隔离契约与配置见 [worker 池说明](docs/python-pool.md)。
+
+用相同短工具、并发、持久化及最终产物对比新进程与常驻模式：
+
+```powershell
+python benchmarks/short_tools.py --pool-comparison --out results/local/python-pool/report.json
+python benchmarks/analyze_short_tools.py results/local/python-pool/report.json --out results/local/python-pool/summary.json
+```
+
+本机四 Context、8 MiB WAL 实验中，稳态吞吐中位数为 16.08 → 250.43 次/秒；冷启动与完整生命周期单独报告。这是本地短工具负载的收益，见 [实测与原始轨迹](docs/python-pool-results.md)，不能外推为完整 Agent 加速比例。
+
 运行保留的 M1 性能对照：
 
 ```powershell
@@ -92,6 +103,8 @@ python -m unittest discover -s python/tests -v
 - [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
 - [短工具测量合同](docs/short-tools-method.md)：持久确认、准入、进程／函数、交付／消费、压缩和锁等待的精确边界。
 - [短工具实测与优化选择](docs/short-tools-results.md)：单／多 Context 分位数、54 次压缩、追踪扰动；下一项选择有界 Python worker 池。
+- [有界 Python worker 池](docs/python-pool.md)：可信准入、复用边界、取消回收和状态清理。
+- [worker 池对照结果](docs/python-pool-results.md)：新进程／复用、冷启动、120 次压缩、原始轨迹及真实 Focus 回归。
 - `runtime`：共享调度器、Python／进程执行器、资源与依赖、耐久事件和结果路由。
 - `cmd/runtime`：本地 stdio JSONL 服务，一个连接可承载多个 Context 的 Run。
 - `python/focus_tool`：Focus 调用适配层、执行前检查、按 Run 分发与消费结果。

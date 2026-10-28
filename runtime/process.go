@@ -93,9 +93,61 @@ func (p ProcessExecutor) run(ctx context.Context, task Task, input string, envel
 	return result
 }
 
-type PythonExecutor struct{ Process ProcessExecutor }
+type PythonExecutor struct {
+	Process ProcessExecutor
+	Pool    *PythonPool
+}
+
+type freshPythonCall struct{ executor PythonExecutor }
+
+func (call freshPythonCall) Release() {}
+func (call freshPythonCall) Execute(ctx context.Context, task Task) Result {
+	return call.executor.executeFresh(ctx, task)
+}
+
+func (p PythonExecutor) Prepare(ctx context.Context, task Task) (PreparedExecution, error) {
+	if task.Python != nil && task.Python.Reuse && p.Pool != nil {
+		return p.Pool.prepare(ctx, task)
+	}
+	return freshPythonCall{p}, nil
+}
+
+func (p PythonExecutor) Close() error {
+	if p.Pool != nil {
+		return p.Pool.Close()
+	}
+	return nil
+}
+func (p PythonExecutor) PoolStats() *PoolStats {
+	if p.Pool == nil {
+		return nil
+	}
+	stats := p.Pool.Stats()
+	return &stats
+}
 
 func (p PythonExecutor) Execute(ctx context.Context, task Task) Result {
+	call, err := p.Prepare(ctx, task)
+	if err != nil {
+		state := "failed"
+		if ctx.Err() != nil {
+			state = "cancelled"
+		}
+		return Result{State: state, Error: err.Error()}
+	}
+	defer call.Release()
+	return call.Execute(ctx, task)
+}
+
+func (p PythonExecutor) executeFresh(ctx context.Context, task Task) (result Result) {
+	start := time.Now()
+	trace := executionTracer(ctx)
+	defer func() {
+		if trace.emit != nil {
+			end := time.Now()
+			trace.emit(TraceEvent{Phase: "python_call", Owner: task.Owner, TaskID: task.ID, StartNS: start.UnixNano(), EndNS: end.UnixNano(), DurationNS: end.Sub(start).Nanoseconds(), PID: result.PID})
+		}
+	}()
 	if task.Python == nil {
 		return Result{State: "failed", Error: "missing Python call"}
 	}
@@ -103,7 +155,6 @@ func (p PythonExecutor) Execute(ctx context.Context, task Task) Result {
 	if err != nil {
 		return Result{State: "failed", Error: err.Error()}
 	}
-	trace := executionTracer(ctx)
 	if trace.emit != nil {
 		input, err = json.Marshal(struct {
 			*PythonCall
@@ -114,7 +165,7 @@ func (p PythonExecutor) Execute(ctx context.Context, task Task) Result {
 		}
 	}
 	task.Command = []string{task.Python.Interpreter, "-u", "-c", pythonWorker}
-	result := p.Process.run(ctx, task, string(input), trace.emit != nil)
+	result = p.Process.run(ctx, task, string(input), trace.emit != nil)
 	if trace.emit != nil {
 		var frame struct {
 			Output  string       `json:"output"`

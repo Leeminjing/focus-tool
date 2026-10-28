@@ -108,6 +108,8 @@ func serve() (serveError error) {
 	segmentBytes := flag.Int64("segment-bytes", 0, "WAL segment size before online compaction; 0 uses 8 MiB")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
 	tracePath := flag.String("trace", "", "optional fresh diagnostic JSONL path; buffered, not execution facts")
+	pythonWorkers := flag.Int("python-workers", 0, "bounded persistent workers for registered reuse-eligible Python tools; 0 keeps fresh processes")
+	workerTasks := flag.Int("python-worker-tasks", 256, "maximum successful calls before recycling a Python worker")
 	flag.Parse()
 	trace, closeTrace, err := openTrace(*tracePath)
 	if err != nil {
@@ -121,6 +123,17 @@ func serve() (serveError error) {
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
 	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
+	if *pythonWorkers < 0 {
+		return fmt.Errorf("negative Python worker bound")
+	}
+	if *pythonWorkers > 0 {
+		pool, err := tool.NewPythonPool(*pythonWorkers, *workerTasks, 0)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+		config.Executors["python"] = tool.PythonExecutor{Pool: pool}
+	}
 	config.PerRunCapacity = *perRunCapacity
 	config.MaxActiveRuns, config.SegmentBytes = *maxRuns, *segmentBytes
 	config.Trace = trace
@@ -211,6 +224,9 @@ func serve() (serveError error) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			err = engine.Close(ctx)
 			cancel()
+			if err == nil {
+				value = engine.Stats()
+			}
 		default:
 			err = fmt.Errorf("unknown method %q", req.Method)
 		}

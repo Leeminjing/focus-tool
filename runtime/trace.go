@@ -25,6 +25,8 @@ type TraceEvent struct {
 	Bytes      int    `json:"bytes,omitempty"`
 	Records    int    `json:"records,omitempty"`
 	State      string `json:"state,omitempty"`
+	PID        int    `json:"pid,omitempty"`
+	Reused     bool   `json:"reused,omitempty"`
 }
 
 // Implementations must be concurrency-safe, must not call Engine methods, and
