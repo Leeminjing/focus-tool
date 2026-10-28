@@ -106,6 +106,7 @@ func serve() (serveError error) {
 	perRunCapacity := flag.Int("per-run-capacity", 0, "per-run outstanding tasks and unacknowledged facts; 0 uses capacity/concurrency")
 	maxRuns := flag.Int("max-active-runs", 0, "resident open Run bound; 0 uses max(128, capacity)")
 	segmentBytes := flag.Int64("segment-bytes", 0, "WAL segment size before online compaction; 0 uses 8 MiB")
+	compactionMode := flag.String("compaction-mode", "background", "background bounded compaction or sync comparison baseline")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
 	tracePath := flag.String("trace", "", "optional fresh diagnostic JSONL path; buffered, not execution facts")
 	pythonWorkers := flag.Int("python-workers", 0, "bounded persistent workers for registered reuse-eligible Python tools; 0 keeps fresh processes")
@@ -136,6 +137,7 @@ func serve() (serveError error) {
 	}
 	config.PerRunCapacity = *perRunCapacity
 	config.MaxActiveRuns, config.SegmentBytes = *maxRuns, *segmentBytes
+	config.CompactionMode = *compactionMode
 	config.Trace = trace
 	if *requireApproval {
 		config.BeforeExecute = gates.check

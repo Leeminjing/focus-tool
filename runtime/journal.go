@@ -23,16 +23,29 @@ type journal struct {
 	path        string
 	bytes       int64
 	compactions uint64
-	// Only the current WAL segment is cached. Intermediate transitions are
-	// coalesced when indexing; every original transition is still fsynced first.
+	walCache
+	sealed           *sealedSegment // One immutable overlay until durable retirement.
+	publishedThrough uint64
+	generation       uint64
+	waits            uint64
+}
+
+type walCache struct {
 	tasks  map[string]Status
 	runs   map[Owner]RunState
 	events []Completion
 }
 
+func emptyCache() walCache { return walCache{tasks: map[string]Status{}, runs: map[Owner]RunState{}} }
+
+type publication struct {
+	Generation uint64 `json:"generation"`
+	Through    uint64 `json:"through"`
+}
+
 // Replay one frame at a time; only a torn FINAL frame is truncated. Complete
 // corruption fails closed. The legacy single-file journal is also this format.
-func replayFile(file *os.File, apply func(record) error) error {
+func replayFile(file *os.File, apply func(record) error, allowTorn bool) error {
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
@@ -50,6 +63,9 @@ func replayFile(file *os.File, apply func(record) error) error {
 				continue
 			}
 			if err == io.EOF {
+				if len(data) > 0 && !allowTorn {
+					return fmt.Errorf("incomplete frame in immutable sealed WAL")
+				}
 				if err := file.Truncate(offset); err != nil {
 					return err
 				}
@@ -105,7 +121,7 @@ func openJournal(path string) (*journal, *history, error) {
 		return h.apply(item)
 	}
 	if file, err := os.OpenFile(sealed, os.O_RDWR, 0600); err == nil {
-		err = replayFile(file, apply)
+		err = replayFile(file, apply, false)
 		file.Close()
 		if err != nil {
 			return fail(err)
@@ -121,7 +137,7 @@ func openJournal(path string) (*journal, *history, error) {
 		file.Close()
 		return fail(err)
 	}
-	if err := replayFile(file, apply); err != nil {
+	if err := replayFile(file, apply, true); err != nil {
 		file.Close()
 		return fail(err)
 	}
@@ -136,37 +152,82 @@ func openJournal(path string) (*journal, *history, error) {
 		file.Close()
 		return fail(err)
 	}
+	var published publication
+	if _, err := readJSON(filepath.Join(h.root, "published.json"), &published); err != nil {
+		file.Close()
+		return fail(err)
+	}
+	if _, err := readJSON(filepath.Join(h.root, "sequence.json"), &published.Through); err != nil {
+		file.Close()
+		return fail(err)
+	}
+	// Sealed then active replay has repaired every derived file before service.
+	if err := writeJSON(filepath.Join(h.root, "published.json"), published); err != nil {
+		file.Close()
+		return fail(err)
+	}
 	if err := removeDurable(sealed); err != nil {
 		file.Close()
 		return fail(err)
 	}
-	return &journal{file: file, lock: lock, path: path, bytes: info.Size(), tasks: map[string]Status{}, runs: map[Owner]RunState{}}, h, nil
+	return &journal{file: file, lock: lock, path: path, bytes: info.Size(), walCache: emptyCache(), publishedThrough: published.Through, generation: published.Generation}, h, nil
 }
 
 // History is durable before rotation. Seal, create/fsync the new segment, then
 // discard the redundant WAL. Startup repairs either rename boundary.
-func (j *journal) compact(h *history) error {
+func (cache walCache) index(h *history, step func(string) error) error {
 	// The WAL remains replayable until ALL canonical records/indexes are
 	// durable. Repeated compaction after any interrupted write is idempotent.
-	for _, status := range j.tasks {
-		if err := h.apply(record{Version: 2, Task: &status}); err != nil {
+	apply := func(item record) error {
+		h.index.Lock()
+		err := h.apply(item)
+		h.index.Unlock()
+		if err == nil && step != nil {
+			err = step("index_record")
+		}
+		return err
+	}
+	for _, status := range cache.tasks {
+		if err := apply(record{Version: 2, Task: &status}); err != nil {
 			return err
 		}
 	}
-	for _, event := range j.events {
-		if err := writeJSON(h.eventPath(event.Task.Owner, event.Sequence), event); err != nil {
+	for _, event := range cache.events {
+		h.index.Lock()
+		err := writeJSON(h.eventPath(event.Task.Owner, event.Sequence), event)
+		h.index.Unlock()
+		if err != nil {
+			return err
+		}
+		if step != nil {
+			if err := step("index_record"); err != nil {
+				return err
+			}
+		}
+	}
+	if len(cache.events) > 0 {
+		if err := writeJSON(filepath.Join(h.root, "sequence.json"), cache.events[len(cache.events)-1].Sequence); err != nil {
 			return err
 		}
 	}
+	for _, state := range cache.runs {
+		if err := apply(record{Version: 2, Run: &state}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (j *journal) compact(h *history) error {
+	if err := j.walCache.index(h, nil); err != nil {
+		return err
+	}
+	through := j.publishedThrough
 	if len(j.events) > 0 {
-		if err := writeJSON(filepath.Join(h.root, "sequence.json"), j.events[len(j.events)-1].Sequence); err != nil {
-			return err
-		}
+		through = j.events[len(j.events)-1].Sequence
 	}
-	for _, state := range j.runs {
-		if err := h.apply(record{Version: 2, Run: &state}); err != nil {
-			return err
-		}
+	if err := writeJSON(filepath.Join(h.root, "published.json"), publication{j.generation + 1, through}); err != nil {
+		return err
 	}
 	if err := j.file.Close(); err != nil {
 		return err
@@ -190,9 +251,9 @@ func (j *journal) compact(h *history) error {
 		return err
 	}
 	j.bytes = 0
-	j.tasks = map[string]Status{}
-	j.runs = map[Owner]RunState{}
-	j.events = nil
+	j.walCache = emptyCache()
+	j.publishedThrough = through
+	j.generation++
 	j.compactions++
 	return nil
 }
@@ -225,6 +286,23 @@ func (e *Engine) save(item record) error {
 	}
 	if e.journal == nil {
 		return nil
+	}
+	// A second full segment cannot become an unbounded queue. Wait BEFORE
+	// another append; mutation order is held while reads keep the Engine lock.
+	if e.ready && e.config.CompactionMode == "background" && e.journal.bytes >= e.config.SegmentBytes {
+		if segment := e.journal.sealed; segment != nil {
+			if err := e.joinCompaction(e.lockSpan.ctx, segment, "capacity"); err != nil {
+				return err // No append occurred; close may retry cancellation later.
+			}
+		}
+		if e.fatal != nil {
+			return e.fatal
+		}
+		if e.journal.bytes >= e.config.SegmentBytes {
+			if err := e.startCompaction(item); err != nil {
+				return e.storageFailure(err)
+			}
+		}
 	}
 	item.Version = 2
 	started := time.Now()
@@ -287,7 +365,7 @@ func (e *Engine) save(item record) error {
 			e.journal.events = append(e.journal.events, *item.Event)
 		}
 		e.journal.bytes += int64(len(data) + 1)
-		if e.journal.bytes >= e.config.SegmentBytes {
+		if e.journal.bytes >= e.config.SegmentBytes && e.journal.sealed == nil {
 			err = e.compact(item)
 		}
 	}
@@ -298,6 +376,9 @@ func (e *Engine) save(item record) error {
 }
 
 func (e *Engine) compact(cause record) error {
+	if e.ready && e.config.CompactionMode == "background" {
+		return e.startCompaction(cause)
+	}
 	start := time.Now()
 	count := len(e.journal.tasks) + len(e.journal.events) + len(e.journal.runs)
 	err := e.journal.compact(e.history)
@@ -334,5 +415,23 @@ func (e *Engine) Compact() error {
 	if err := e.compact(record{}); err != nil {
 		return e.storageFailure(err)
 	}
-	return nil
+	if e.config.CompactionMode == "background" {
+		// Flush prior sealed work, then seal the active tail. No other mutator
+		// can interleave while this explicit indexing barrier owns its gate.
+		if segment := e.journal.sealed; segment != nil {
+			e.waitCompaction(segment, "flush")
+		}
+		if e.fatal != nil {
+			return e.fatal
+		}
+		if e.journal.bytes > 0 {
+			if err := e.startCompaction(record{}); err != nil {
+				return e.storageFailure(err)
+			}
+			if segment := e.journal.sealed; segment != nil {
+				e.waitCompaction(segment, "flush")
+			}
+		}
+	}
+	return e.fatal
 }

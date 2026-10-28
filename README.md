@@ -58,6 +58,13 @@ python benchmarks/analyze_short_tools.py results/local/python-pool/report.json -
 
 本机四 Context、8 MiB WAL 实验中，稳态吞吐中位数为 16.08 → 250.43 次/秒；冷启动与完整生命周期单独报告。这是本地短工具负载的收益，见 [实测与原始轨迹](docs/python-pool-results.md)，不能外推为完整 Agent 加速比例。
 
+压缩已拆为短暂封存切换、单个后台索引构建、耐久发布和回收。默认 `background`，保留 `sync` 对照；积压限制为一个封存段加一个活动段。查询合并、背压及恢复规则见 [后台压缩合同](docs/background-compaction.md)。单独运行同负载比较（默认包含 8 MiB 多轮压缩）：
+
+```powershell
+python benchmarks/compaction.py --out results/local/compaction/report.json
+python benchmarks/analyze_short_tools.py results/local/compaction/report.json --out results/local/compaction/summary.json
+```
+
 运行保留的 M1 性能对照：
 
 ```powershell

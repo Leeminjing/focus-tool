@@ -20,9 +20,10 @@ separate research stages.
 
 In durable mode (`-journal` nonempty), the resident maps contain only open Runs,
 nonterminal tasks, unresolved `unknown` executions and live unacknowledged
-results. A second, bounded cache holds only the current WAL segment (default
-8 MiB of serialized transitions plus at most one frame; experiments use 256
-KiB). Its latest statuses and facts serve reads until indexing/rotation. Beyond
+results. Bounded recent caches hold the active WAL and at most one sealed segment
+(each normally the default 8 MiB target plus at most one frame; retention
+experiments use 256 KiB). Their latest statuses and facts serve reads until
+index publication. Beyond
 that recent segment, terminal identity/payload and old dependencies are read
 from a SHA-256-keyed disk index instead of pinning history.
 Acknowledgement evicts the live event; closing a Run evicts its remaining live
@@ -56,14 +57,23 @@ On Unix, containing directories are fsynced; Windows uses synced files and
 [`MoveFileExW(REPLACE_EXISTING | WRITE_THROUGH)`](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw). Faulty hardware/power-loss
 guarantees are not established by process-crash tests.
 
-When `-segment-bytes` is reached (default 8 MiB), the WAL is indexed then sealed
-as `<journal>.sealed`, a fresh active WAL is created and synced, and the redundant
-sealed transitions are removed. `compact` triggers the same operation explicitly.
+When `-segment-bytes` is reached (default 8 MiB), default background mode seals
+`<journal>.sealed` and creates/syncs a fresh active WAL under a short Engine lock.
+One builder updates derived files outside that lock, syncs and atomically replaces
+`published.json` (generation/sequence), advances visible coverage, then retires
+the sealed file. Queries prefer active then sealed overlays over disk; pages
+exclude disk facts beyond published coverage. Per-record index/read locking also
+avoids Windows replacement races. A full active WAL while the sole builder is
+busy applies backpressure outside Engine.mu; mutation order remains serialized.
+`compact` is an explicit indexing barrier that joins prior work and the active
+tail. `-compaction-mode sync` preserves the original build-under-lock baseline.
 The stable `<journal>.lock` remains held across rotation. At startup, sealed then
 active frames replay idempotently into disk indexes before loading live state.
-Only a torn final frame is discarded; complete malformed frames fail closed.
+Only a torn final active frame is discarded; incomplete sealed frames and complete
+malformed frames fail closed.
 Replay is streaming with a 32 MiB **per-frame** bound, replacing the old 128 MiB
-whole-journal cap. Normal WAL size is segment target plus at most one frame.
+whole-journal cap. Each of at most two recent segments is normally a segment target
+plus at most one frame. See [background publication/backpressure](background-compaction.md).
 
 Original unversioned journals migrate automatically: event facts reconstruct
 Run counters without a resident map of every old Run. Stop the old binary before

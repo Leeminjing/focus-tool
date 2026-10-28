@@ -96,7 +96,7 @@ journal 为 fsync 的 JSONL，每个终态及其完成事件写在同一个 fram
 
 queued 任务的恢复需要重新通过执行前检查。新 Python 适配器默认拒绝尚未重新登记到本地调用表的任务；恢复时先建立可信注册与准入策略，不能默认批准历史排队任务。
 
-活动结果和未完成状态受配额限制；已确认／关闭的历史在磁盘索引与有界近期 WAL 缓存中保留，按需查询。每条变更仍单独 fsync；段达到 `segment_bytes`／`-segment-bytes`（默认 8 MiB）后合并索引并压缩。旧 ID 和依赖结果不随压缩过期，unknown 不随归档解锁。游标绑定 owner 与查询上界，默认每页 100 条／2 MiB，最大 1000 条／4 MiB。详见 [存储协议及恢复边界](history-retention.md)。升级需先停止旧进程；备份须包含 journal、`.store` 和任何 `.sealed` 段。
+活动结果和未完成状态受配额限制；已确认／关闭的历史在磁盘索引与有界近期 WAL 缓存中保留，按需查询。每条变更仍单独 fsync；段达到 `segment_bytes`／`-segment-bytes`（默认 8 MiB）后封存，单个后台任务构建耐久索引并发布水位，再回收旧段。`compaction_mode="background"`／`-compaction-mode background` 为默认，`sync` 保留原同步对照。最多一个封存段加一个活动段；构建跟不上时写入在 Engine 锁外背压。查询合并及关闭超时的所有权规则见 [后台压缩合同](background-compaction.md)。旧 ID 和依赖结果不随压缩过期，unknown 不随归档解锁。游标绑定 owner 与查询上界，默认每页 100 条／2 MiB，最大 1000 条／4 MiB。详见 [存储协议及恢复边界](history-retention.md)。升级需先停止旧进程；备份须包含 journal、`.store` 和任何 `.sealed` 段。
 
 客户端只订阅活动 Run。关闭后迟到的帧被丢弃于连接缓冲层，事实仍由耐久归档保管；重新打开活动 Run 时使用 `event_page` 补取历史未确认结果，并与实时泵按序去重合并。历史终态的重提／reconcile 不保留多余工具授权注册。
 
@@ -113,8 +113,8 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 | events | owner、after | 单页小结果兼容接口，需继续分页时返回明确错误 |
 | event_page | owner、cursor 或 after、limit、max_bytes | 分页补取活动 Run 未 ack 的事件 |
 | archive_events | owner、cursor 或 after、limit、max_bytes | 返回 items／next_cursor／through，查询关闭 Run 历史，不改变 Ack |
-| compact | 无 | 在线合并索引、轮换 WAL 并删除冗余段，保留执行事实 |
-| stats | collect（可选） | 活动任务／结果／Run、隔离、近期 WAL 缓存、压缩次数、WAL 字节和 Go 堆；collect=true 在采样前触发 GC |
+| compact | 无 | 等待此前封存段与活动尾部索引耐久发布，保留执行事实 |
+| stats | collect（可选） | 活动任务／结果／Run、隔离、近期 WAL 缓存、活动／封存字节、待压缩段、builder 数、背压次数、发布水位及 Go 堆；collect=true 在采样前触发 GC |
 | ack | owner、sequence | 顺序确认持久消费水位 |
 | authorize | token、allowed、reason | 回答执行前检查；过期 token 失效 |
 | close_run | owner | 关闭 Run、取消任务，返回向 runtime_archive 转交结果保管权的回执 |

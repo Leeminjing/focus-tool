@@ -33,7 +33,7 @@ def write_durable(path, value):
 def fingerprint():
     paths = [*ROOT.glob("runtime/*.go"), *ROOT.glob("runtime/*.py"),
              *ROOT.glob("cmd/runtime/*.go"), *ROOT.glob("python/focus_tool/*.py"),
-             *ROOT.glob("benchmarks/*short_tools*.py")]
+             *ROOT.glob("benchmarks/*short_tools*.py"), ROOT / "benchmarks/compaction.py"]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
             for path in sorted(paths) if not path.name.endswith("_test.go")}
 
@@ -43,7 +43,8 @@ def archive_trace(source, destination):
         shutil.copyfileobj(reader, writer)
 
 
-async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, tracing, warmup, mode="fresh"):
+async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, tracing, warmup, mode="fresh",
+                compaction_mode="background", drain_compaction=True, sample_every=0):
     with tempfile.TemporaryDirectory(prefix="focus-short-tools-") as name:
         directory = Path(name)
         shutil.copyfile(ROOT / "benchmarks/short_tools_workload.py", directory / "short_tools_fixture.py")
@@ -61,13 +62,15 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
         client = await RuntimeClient.start([str(binary)], journal=directory / "runtime.jsonl",
             concurrency=4, capacity=64, per_run_capacity=16, max_active_runs=8,
             segment_bytes=segment_bytes, trace=emit if tracing else None,
-            trace_path=go_trace if tracing else None, python_workers=4 if mode == "pool" else 0)
+            trace_path=go_trace if tracing else None, python_workers=4 if mode == "pool" else 0,
+            compaction_mode=compaction_mode)
         adapter = FocusToolAdapter(client, {name: ToolDefinition("python", module="short_tools_fixture", function=name, reuse=True)
             for name in NAMES}, workspace=directory,
             before_execute=lambda task: Path(task["directory"]).resolve() == directory.resolve())
         runs = []
         records = []
         artifacts = []
+        samples = []
         per_context = jobs // contexts
         # Keep the same aggregate in-flight bound in both Context regimes.
         depth = 4 // contexts
@@ -116,6 +119,10 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
                 record.update(submit_to_consume_ns=consumed_mono-mono, consumer_ns=end_mono-consumed_mono, ack_ns=end_mono-ack_mono)
                 records.append(record)
                 emit(record)
+                if measured and sample_every and (number+1) % sample_every == 0:
+                    sample = await client.request("stats")
+                    samples.append(sample)
+                    emit({"phase": "bench_stats", "clock": "python_client", "at_ns": time.time_ns(), "stats": sample})
                 if number + depth < count:
                     await enqueue(number + depth)
             return totals
@@ -125,9 +132,15 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             cold_start = time.perf_counter_ns()
             await asyncio.gather(*(produce(run, warmup // contexts, "warmup", False) for run in runs))
             warmup_ns = time.perf_counter_ns() - cold_start
+            if drain_compaction:
+                await client.request("compact")
             before = await client.request("stats")
             start_wall, start = time.time_ns(), time.perf_counter_ns()
             artifacts = await asyncio.gather(*(produce(run, per_context, "measured", True) for run in runs))
+            drain_start = time.perf_counter_ns()
+            if drain_compaction:
+                await client.request("compact")
+            drain_ns = time.perf_counter_ns()-drain_start if drain_compaction else 0
             end_wall, end = time.time_ns(), time.perf_counter_ns()
             elapsed = end - start
             emit({"phase": "bench_window", "clock": "python_client", "start_ns": start_wall,
@@ -158,6 +171,8 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             go_name = identity + ".go.jsonl.gz"
             archive_trace(go_trace, destination / go_name)
         return {"id": identity, "contexts": contexts, "jobs": jobs, "segment_bytes": segment_bytes, "execution_mode": mode,
+                "compaction_mode": compaction_mode, "drain_compaction": drain_compaction,
+                "post_workload_drain_ns": drain_ns, "stats_samples": samples,
                 "tracing": tracing, "elapsed_ns": elapsed, "throughput_per_s": jobs * 1e9 / elapsed,
                 "compactions": after["compactions"] - before["compactions"], "before": before, "after": after,
                 "final_artifact": final, "final_artifact_readback": True, "client_trace": client_name, "go_trace": go_name,

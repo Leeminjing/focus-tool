@@ -27,6 +27,9 @@ type finished struct {
 
 type Engine struct {
 	mu              sync.Mutex
+	mutation        chan struct{} // Cancellable ordering gate while compaction waits release mu.
+	lockSpan        *engineLockSpan
+	ready           bool
 	config          Config
 	tasks           map[string]*entry
 	runs            map[Owner]RunState
@@ -75,6 +78,12 @@ func New(config Config) (*Engine, error) {
 	if config.SegmentBytes == 0 {
 		config.SegmentBytes = 8 << 20
 	}
+	if config.CompactionMode == "" {
+		config.CompactionMode = "background"
+	}
+	if config.CompactionMode != "background" && config.CompactionMode != "sync" {
+		return nil, fmt.Errorf("compaction mode must be background or sync")
+	}
 	if config.MaxActiveRuns < 1 || config.SegmentBytes < 1 {
 		return nil, fmt.Errorf("run and segment limits must be positive")
 	}
@@ -87,7 +96,7 @@ func New(config Config) (*Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{config: config, tasks: map[string]*entry{}, runs: map[Owner]RunState{}, queues: map[Owner][]string{}, journal: file, history: history, wake: make(chan struct{}, 1), changed: make(chan struct{}, 1), finished: make(chan finished, config.Concurrency), done: make(chan struct{})}
+	e := &Engine{config: config, mutation: make(chan struct{}, 1), tasks: map[string]*entry{}, runs: map[Owner]RunState{}, queues: map[Owner][]string{}, journal: file, history: history, wake: make(chan struct{}, 1), changed: make(chan struct{}, 1), finished: make(chan finished, config.Concurrency), done: make(chan struct{})}
 	if history != nil {
 		if err := e.restore(); err != nil {
 			file.close()
@@ -119,6 +128,7 @@ func New(config Config) (*Engine, error) {
 			}
 		}
 	}
+	e.ready = true
 	go e.loop()
 	e.signal()
 	return e, nil
@@ -152,6 +162,11 @@ func (e *Engine) runState(owner Owner) (RunState, bool, error) {
 		if state, ok := e.journal.runs[owner]; ok {
 			return state, true, nil
 		}
+		if segment := e.journal.sealed; segment != nil {
+			if state, ok := segment.runs[owner]; ok {
+				return state, true, nil
+			}
+		}
 	}
 	if e.history != nil {
 		return e.history.run(owner)
@@ -166,6 +181,11 @@ func (e *Engine) lookup(owner Owner, id string) (Status, bool, error) {
 	if e.journal != nil {
 		if status, ok := e.journal.tasks[taskKey(owner, id)]; ok {
 			return status, true, nil
+		}
+		if segment := e.journal.sealed; segment != nil {
+			if status, ok := segment.tasks[taskKey(owner, id)]; ok {
+				return status, true, nil
+			}
 		}
 	}
 	if e.history != nil {
@@ -534,6 +554,17 @@ func (e *Engine) Stats() Stats {
 		stats.JournalBytes = e.journal.bytes
 		stats.Compactions = e.journal.compactions
 		stats.CachedTasks, stats.CachedEvents, stats.CachedRuns = len(e.journal.tasks), len(e.journal.events), len(e.journal.runs)
+		stats.PublishedSequence = e.journal.publishedThrough
+		stats.CompactionWaits = e.journal.waits
+		if segment := e.journal.sealed; segment != nil {
+			stats.PendingSegments, stats.PendingBytes = 1, segment.bytes
+			stats.CachedTasks += len(segment.tasks)
+			stats.CachedRuns += len(segment.runs)
+			stats.CachedEvents += len(segment.events)
+			if !segment.finished {
+				stats.CompactionWorkers = 1
+			}
+		}
 	}
 	return stats
 }
@@ -847,24 +878,44 @@ func (e *Engine) loop() {
 }
 
 func (e *Engine) Close(ctx context.Context) error {
-	e.mu.Lock()
-	if !e.closing {
-		e.closing = true
-		for key, item := range e.tasks {
-			if !terminal(item.State) {
-				_ = e.cancel(key)
+	unlock, err := e.lockContext(ctx, "close", Owner{}, "")
+	if err != nil {
+		return err
+	}
+	e.closing = true
+	// Retry unfinished cancellations after a previous close timed out before
+	// its WAL append. A cancel request alone never releases execution resources.
+	for key, item := range e.tasks {
+		if !terminal(item.State) {
+			if err := e.cancel(key); err != nil {
+				if e.fatal != nil {
+					break
+				}
+				unlock()
+				e.signal()
+				return err
 			}
 		}
 	}
-	e.mu.Unlock()
+	unlock()
 	e.signal()
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-e.done:
 	}
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	unlock, err = e.lockContext(ctx, "shutdown", Owner{}, "")
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if e.journal != nil && e.journal.sealed != nil {
+		// A completed execution is not permission to abandon an index builder
+		// that still owns the journal and its stable lock.
+		if err := e.joinCompaction(ctx, e.journal.sealed, "shutdown"); err != nil {
+			return err // Keep journal/lock ownership until a later Close can join.
+		}
+	}
 	if !e.executorsClosed {
 		e.executorsClosed = true
 		for _, executor := range e.config.Executors {

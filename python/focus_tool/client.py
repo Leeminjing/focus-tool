@@ -61,10 +61,11 @@ class RuntimeClient:
     @classmethod
     async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0,
                     max_active_runs=0, segment_bytes=0, cwd=None, authorize=None, trace=None, trace_path=None,
-                    python_workers=0, python_worker_tasks=256):
+                    python_workers=0, python_worker_tasks=256, compaction_mode="background"):
         argv = [*command, "-journal", str(journal), "-concurrency", str(concurrency),
                 "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity),
-                "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes), "-require-approval=true"]
+                "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes),
+                "-compaction-mode", compaction_mode, "-require-approval=true"]
         if trace_path is not None:
             argv.extend(["-trace", str(trace_path)])
         argv.extend(["-python-workers", str(python_workers), "-python-worker-tasks", str(python_worker_tasks)])

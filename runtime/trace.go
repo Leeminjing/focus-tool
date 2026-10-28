@@ -27,6 +27,7 @@ type TraceEvent struct {
 	State      string `json:"state,omitempty"`
 	PID        int    `json:"pid,omitempty"`
 	Reused     bool   `json:"reused,omitempty"`
+	Generation uint64 `json:"generation,omitempty"`
 }
 
 // Implementations must be concurrency-safe, must not call Engine methods, and
@@ -41,22 +42,66 @@ func (e *Engine) traceSpan(phase string, task Task, state string, start time.Tim
 	}
 }
 
+type engineLockSpan struct {
+	ctx             context.Context
+	operation       string
+	owner           Owner
+	taskID          string
+	start, acquired time.Time
+}
+
+func mutationOperation(operation string) bool {
+	switch operation {
+	case "open_run", "submit", "cancel", "ack", "close_run", "dispatch", "completion", "compact", "close", "shutdown":
+		return true
+	}
+	return false
+}
+
 func (e *Engine) lock(operation string, owner Owner, taskID string) func() {
-	if e.config.Trace == nil {
-		e.mu.Lock()
-		return e.mu.Unlock
+	unlock, _ := e.lockContext(context.Background(), operation, owner, taskID)
+	return unlock
+}
+
+func (e *Engine) lockContext(ctx context.Context, operation string, owner Owner, taskID string) (func(), error) {
+	ordered := e.config.CompactionMode == "background" && mutationOperation(operation)
+	if ordered {
+		start := time.Now()
+		select {
+		case e.mutation <- struct{}{}:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		if err := ctx.Err(); err != nil {
+			<-e.mutation
+			return nil, err
+		}
+		if e.config.Trace != nil {
+			end := time.Now()
+			e.config.Trace(TraceEvent{Phase: "mutation_gate", Operation: operation, Owner: owner, TaskID: taskID,
+				StartNS: start.UnixNano(), EndNS: end.UnixNano(), DurationNS: end.Sub(start).Nanoseconds()})
+		}
 	}
 	start := time.Now()
 	e.mu.Lock()
-	acquired := time.Now()
-	e.traceOperation = operation
+	span := &engineLockSpan{ctx: ctx, operation: operation, owner: owner, taskID: taskID, start: start, acquired: time.Now()}
+	e.lockSpan, e.traceOperation = span, operation
 	return func() {
-		end := time.Now()
-		e.traceOperation = ""
-		e.mu.Unlock()
-		e.config.Trace(TraceEvent{Phase: "engine_lock", Operation: operation, Owner: owner, TaskID: taskID,
-			StartNS: start.UnixNano(), AcquiredNS: acquired.UnixNano(), EndNS: end.UnixNano(),
-			DurationNS: end.Sub(start).Nanoseconds(), WaitNS: acquired.Sub(start).Nanoseconds(), HoldNS: end.Sub(acquired).Nanoseconds()})
+		e.unlockSpan(span)
+		if ordered {
+			<-e.mutation
+		}
+	}, nil
+}
+
+func (e *Engine) unlockSpan(span *engineLockSpan) {
+	end := time.Now()
+	e.lockSpan, e.traceOperation = nil, ""
+	e.mu.Unlock()
+	if e.config.Trace != nil {
+		e.config.Trace(TraceEvent{Phase: "engine_lock", Operation: span.operation, Owner: span.owner, TaskID: span.taskID,
+			StartNS: span.start.UnixNano(), AcquiredNS: span.acquired.UnixNano(), EndNS: end.UnixNano(),
+			DurationNS: end.Sub(span.start).Nanoseconds(), WaitNS: span.acquired.Sub(span.start).Nanoseconds(), HoldNS: end.Sub(span.acquired).Nanoseconds()})
 	}
 }
 

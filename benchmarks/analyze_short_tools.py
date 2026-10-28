@@ -56,6 +56,7 @@ def analyze_trial(directory, trial):
     assert math.isclose(throughput, trial["throughput_per_s"], rel_tol=1e-12), "inconsistent throughput"
     result = {"id": trial["id"], "contexts": trial["contexts"], "segment_bytes": trial["segment_bytes"],
               "execution_mode": trial.get("execution_mode", "fresh"),
+              "compaction_mode": trial.get("compaction_mode", "sync"),
               "tracing": trial["tracing"], "throughput_per_s": throughput,
               "e2e_ms": distribution([row["duration_ns"] / 1e6 for row in jobs])}
     if not trial["tracing"]:
@@ -82,6 +83,14 @@ def analyze_trial(directory, trial):
     clocks = []
     job_ids = {key(row) for row in jobs}
     job_sequences = {(*owner(row), row["sequence"]) for row in jobs}
+    ack_by_owner, ack_by_sequence = defaultdict(list), defaultdict(list)
+    identified_ack_owners = set()
+    for event in go:
+        if event.get("operation") == "ack" and event["phase"].startswith("wal_"):
+            ack_by_owner[owner(event)].append(event)
+            if event.get("sequence", 0):
+                ack_by_sequence[(*owner(event), event["sequence"])].append(event)
+                identified_ack_owners.add(owner(event))
 
     def one(events, phase, state=None):
         found = [event for event in events if event["phase"] == phase and (state is None or event.get("state") == state)]
@@ -129,11 +138,8 @@ def analyze_trial(directory, trial):
         for phase in ("module_import", "result_encode", "completion_handoff"):
             values[phase] = one(events, phase)["duration_ns"]
         # Attribute Run-only ack persistence using its consumer interval.
-        ack_candidates = [event for event in go if owner(event) == owner(row) and event.get("operation") == "ack"]
-        identified = any(event.get("sequence", 0) for event in ack_candidates if event["phase"] == "wal_sync")
-        ack_events = [event for event in ack_candidates if
-                      (event.get("sequence") == row["sequence"] if identified else
-                       event["start_ns"] >= row["ack_start_ns"] and event["end_ns"] <= row["end_ns"])]
+        ack_events = ack_by_sequence[(*owner(row), row["sequence"])] if owner(row) in identified_ack_owners else [
+            event for event in ack_by_owner[owner(row)] if event["start_ns"] >= row["ack_start_ns"] and event["end_ns"] <= row["end_ns"]]
         for phase in ("wal_sync", "wal_encode", "wal_append", "wal_fsync"):
             spans = [event for event in events + ack_events if event["phase"] == phase]
             assert len(spans) == 4, ("missing/duplicate durable mutation diagnostics", phase, len(spans), key(row))
@@ -184,6 +190,14 @@ def analyze_trial(directory, trial):
             requests[event["operation"]]["server_handle_before_drain_end"].append(-prehandle/1e6)
 
     locks = [row for row in go if row["phase"] == "engine_lock" and row["start_ns"] >= measured_start and row["end_ns"] <= measured_end]
+    gates = [row for row in go if row["phase"] == "mutation_gate" and row["start_ns"] >= measured_start and row["end_ns"] <= measured_end]
+    gate_waits, cross_gate = defaultdict(list), []
+    for event in gates:
+        gate_waits[event.get("operation", "")].append(event["duration_ns"]/1e6)
+        if owner(event)[0]:
+            blocked = overlap_ns(event["start_ns"], event["end_ns"], [(row["start_ns"], row["end_ns"]) for row in compactions if owner(row)[0] != owner(event)[0]])
+            if blocked:
+                cross_gate.append(blocked/1e6)
     holds, waits, cross_waits = defaultdict(list), defaultdict(list), []
     for event in locks:
         contains = any(event["acquired_ns"] <= row["start_ns"] and row["end_ns"] <= event["end_ns"] for row in compactions)
@@ -201,6 +215,10 @@ def analyze_trial(directory, trial):
         "job_e2e_by_compaction_overlap_ms": {name: distribution(values) for name, values in overlap_groups.items()},
         "request_rtt_and_queue_ms": {op: {name: distribution(values) for name, values in groups.items()} for op, groups in requests.items()},
         "compaction_ms": distribution([row["duration_ns"] / 1e6 for row in compactions]),
+        "compaction_phases_ms": {phase: distribution([row["duration_ns"]/1e6 for row in go if row["phase"] == phase and measured_start <= row["start_ns"] <= row["end_ns"] <= measured_end])
+            for phase in ("compaction_seal", "compaction_build", "compaction_publish", "compaction_retire", "compaction_backpressure", "compaction_join")},
+        "mutation_gate_wait_ms": {op: distribution(values) for op, values in gate_waits.items()},
+        "other_context_compaction_in_gate_wait_ms": distribution(cross_gate),
         "lock_hold_ms": {name: distribution(values) for name, values in holds.items()},
         "lock_wait_ms": {name: distribution(values) for name, values in waits.items()},
         "other_context_compaction_in_lock_wait_ms": distribution(cross_waits),

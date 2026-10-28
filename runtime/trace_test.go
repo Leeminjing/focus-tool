@@ -16,6 +16,7 @@ func TestTraceCapturesDurabilityAdmissionAndActualLockIntervals(t *testing.T) {
 	var events []TraceEvent
 	config := durableConfig(filepath.Join(t.TempDir(), "runtime.jsonl"))
 	config.SegmentBytes = 1
+	config.CompactionMode = "sync" // This test pins the original containing-lock baseline.
 	config.BeforeExecute = func(context.Context, Task) error { return nil }
 	config.Trace = func(event TraceEvent) { mu.Lock(); defer mu.Unlock(); events = append(events, event) }
 	e := testEngine(t, config)

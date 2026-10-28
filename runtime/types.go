@@ -81,21 +81,26 @@ type ArchiveReceipt struct {
 }
 
 type Stats struct {
-	Running        int        `json:"running"`
-	Queued         int        `json:"queued"`
-	Unacknowledged int        `json:"unacknowledged"`
-	Tasks          int        `json:"retained_tasks"`
-	Events         int        `json:"retained_events"`
-	HeapBytes      uint64     `json:"heap_bytes"`
-	JournalBytes   int64      `json:"journal_bytes"`
-	Runs           int        `json:"resident_runs"`
-	QueueOwners    int        `json:"queue_owners"`
-	Unknown        int        `json:"unknown_fences"`
-	Compactions    uint64     `json:"compactions"`
-	CachedTasks    int        `json:"wal_cached_tasks"`
-	CachedEvents   int        `json:"wal_cached_events"`
-	CachedRuns     int        `json:"wal_cached_runs"`
-	PythonPool     *PoolStats `json:"python_pool,omitempty"`
+	Running           int        `json:"running"`
+	Queued            int        `json:"queued"`
+	Unacknowledged    int        `json:"unacknowledged"`
+	Tasks             int        `json:"retained_tasks"`
+	Events            int        `json:"retained_events"`
+	HeapBytes         uint64     `json:"heap_bytes"`
+	JournalBytes      int64      `json:"journal_bytes"`
+	Runs              int        `json:"resident_runs"`
+	QueueOwners       int        `json:"queue_owners"`
+	Unknown           int        `json:"unknown_fences"`
+	Compactions       uint64     `json:"compactions"`
+	CachedTasks       int        `json:"wal_cached_tasks"`
+	CachedEvents      int        `json:"wal_cached_events"`
+	CachedRuns        int        `json:"wal_cached_runs"`
+	PythonPool        *PoolStats `json:"python_pool,omitempty"`
+	PendingSegments   int        `json:"wal_pending_segments"`
+	PendingBytes      int64      `json:"wal_pending_bytes"`
+	CompactionWorkers int        `json:"compaction_workers"`
+	CompactionWaits   uint64     `json:"compaction_backpressure_waits"`
+	PublishedSequence uint64     `json:"published_sequence"`
 }
 
 // ArchivePage is a bounded snapshot of a closed Run's facts. NextCursor is
@@ -136,10 +141,12 @@ type Config struct {
 	PerRunCapacity int    // Nonterminal tasks + unacked facts per active Run; 0 uses Capacity/Concurrency.
 	MaxActiveRuns  int    // Bounds resident Run state; 0 uses max(128, Capacity).
 	SegmentBytes   int64  // Rotate and compact the fsynced WAL; 0 uses 8 MiB.
+	CompactionMode string // "background" (default) or "sync" comparison baseline.
 	Journal        string // Empty means memory only. One runtime must own a journal file.
 	Executors      map[string]Executor
 	BeforeExecute  func(context.Context, Task) error
-	Trace          TraceFunc // Optional diagnostics; does not change WAL acknowledgement policy.
+	Trace          TraceFunc          // Optional diagnostics; does not change WAL acknowledgement policy.
+	compactionHook func(string) error // Internal deterministic crash/fault/slow-builder test seam.
 }
 
 type RunState struct {

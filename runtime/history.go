@@ -15,11 +15,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const maxRecordBytes = 32 << 20
 
-type history struct{ root string }
+type history struct {
+	root  string
+	index sync.RWMutex // One atomic record update, never a whole compaction.
+}
 
 func digest(value string) string {
 	hash := sha256.Sum256([]byte(value))
@@ -186,6 +190,8 @@ func (h *history) apply(item record) error {
 }
 
 func (h *history) status(owner Owner, id string) (Status, bool, error) {
+	h.index.RLock()
+	defer h.index.RUnlock()
 	var status Status
 	ok, err := readJSON(h.keyPath("tasks", taskKey(owner, id)), &status)
 	if ok && (status.Task.Owner != owner || status.Task.ID != id) {
@@ -195,6 +201,8 @@ func (h *history) status(owner Owner, id string) (Status, bool, error) {
 }
 
 func (h *history) run(owner Owner) (RunState, bool, error) {
+	h.index.RLock()
+	defer h.index.RUnlock()
 	var state RunState
 	ok, err := readJSON(h.keyPath("runs", taskKey(owner, "")), &state)
 	if ok && state.Owner != owner {
@@ -267,6 +275,8 @@ func (h *history) migrateCounters() error {
 // Each radix directory has at most 256 entries. Memory is bounded by radix
 // depth + page, even when a single Run has millions of historical results.
 func (h *history) events(owner Owner, after, through uint64, visit func(Completion) (bool, error)) error {
+	h.index.RLock()
+	defer h.index.RUnlock()
 	var walk func(string, string) (bool, error)
 	walk = func(path, prefix string) (bool, error) {
 		entries, err := os.ReadDir(path)
@@ -406,16 +416,24 @@ func (e *Engine) resultPageLocked(owner Owner, options PageOptions, archive bool
 		return false, nil
 	}
 	if e.history != nil {
-		err = e.history.events(owner, after, page.Through, visit)
+		err = e.history.events(owner, after, min(page.Through, e.journal.publishedThrough), visit)
 		if err == nil && !stopped {
-			for _, event := range e.journal.events {
-				if event.Task.Owner == owner && event.Sequence > after && event.Sequence <= page.Through {
-					stop, visitErr := visit(clone(event))
-					if stop || visitErr != nil {
-						err = visitErr
-						break
+			visitCache := func(events []Completion) error {
+				for _, event := range events {
+					if event.Task.Owner == owner && event.Sequence > max(after, e.journal.publishedThrough) && event.Sequence <= page.Through {
+						stop, visitErr := visit(clone(event))
+						if stop || visitErr != nil {
+							return visitErr
+						}
 					}
 				}
+				return nil
+			}
+			if segment := e.journal.sealed; segment != nil {
+				err = visitCache(segment.events)
+			}
+			if err == nil && !stopped {
+				err = visitCache(e.journal.events)
 			}
 		}
 	} else {
