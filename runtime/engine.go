@@ -17,29 +17,33 @@ type entry struct {
 	cancel context.CancelFunc
 }
 type finished struct {
-	key    string
-	result Result
+	key      string
+	result   Result
+	owner    Owner
+	id       string
+	returned time.Time
 }
 
 type Engine struct {
-	mu       sync.Mutex
-	config   Config
-	tasks    map[string]*entry
-	runs     map[Owner]RunState
-	queues   map[Owner][]string
-	owners   []Owner
-	next     int
-	active   int
-	events   []Completion
-	sequence uint64
-	journal  *journal
-	history  *history
-	fatal    error
-	closing  bool
-	wake     chan struct{}
-	changed  chan struct{}
-	finished chan finished
-	done     chan struct{}
+	mu             sync.Mutex
+	config         Config
+	tasks          map[string]*entry
+	runs           map[Owner]RunState
+	queues         map[Owner][]string
+	owners         []Owner
+	next           int
+	active         int
+	events         []Completion
+	sequence       uint64
+	journal        *journal
+	history        *history
+	fatal          error
+	closing        bool
+	wake           chan struct{}
+	changed        chan struct{}
+	finished       chan finished
+	done           chan struct{}
+	traceOperation string // Set only under mu; used to attribute persistence spans.
 }
 
 func taskKey(owner Owner, id string) string {
@@ -235,8 +239,7 @@ func (e *Engine) prune() {
 }
 
 func (e *Engine) OpenRun(owner Owner, revision int) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("open_run", owner, "")()
 	if e.closing {
 		return ErrClosed
 	}
@@ -287,8 +290,7 @@ func (e *Engine) Submit(task Task) (Status, error) {
 		return Status{}, fmt.Errorf("invalid task JSON: %w", err)
 	}
 	task = clone(task)
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("submit", task.Owner, task.ID)()
 	if e.closing {
 		return Status{}, ErrClosed
 	}
@@ -377,8 +379,7 @@ func (e *Engine) Submit(task Task) (Status, error) {
 }
 
 func (e *Engine) Cancel(owner Owner, id string) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("cancel", owner, id)()
 	if e.closing {
 		return ErrClosed
 	}
@@ -422,8 +423,7 @@ func (e *Engine) cancel(key string) error {
 }
 
 func (e *Engine) Status(owner Owner, id string) (Status, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("status", owner, id)()
 	item, ok, err := e.lookup(owner, id)
 	if err != nil {
 		return Status{}, err
@@ -435,8 +435,7 @@ func (e *Engine) Status(owner Owner, id string) (Status, error) {
 }
 
 func (e *Engine) Events(owner Owner, after uint64) []Completion {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("events", owner, "")()
 	var result []Completion
 	if e.history != nil {
 		state, ok, err := e.runState(owner)
@@ -465,8 +464,7 @@ func (e *Engine) Events(owner Owner, after uint64) []Completion {
 }
 
 func (e *Engine) Pending(after uint64) []Completion {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("pending", Owner{}, "")()
 	var result []Completion
 	for _, event := range e.events {
 		if event.Sequence > after && event.Sequence > e.runs[event.Task.Owner].Ack && !e.runs[event.Task.Owner].Closed {
@@ -479,8 +477,7 @@ func (e *Engine) Pending(after uint64) []Completion {
 // Closed Run results transfer to the journal custodian, retaining facts and Ack.
 // Inspect them explicitly through Events; they no longer enter the live pump.
 func (e *Engine) Archive(owner Owner) ArchiveReceipt {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("archive", owner, "")()
 	receipt := ArchiveReceipt{Owner: owner, Custodian: "run"}
 	state, _, err := e.runState(owner)
 	if err != nil {
@@ -510,8 +507,7 @@ func (e *Engine) ArchivedEvents(owner Owner, after uint64) []Completion {
 }
 
 func (e *Engine) Stats() Stats {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("stats", Owner{}, "")()
 	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events), Runs: len(e.runs), QueueOwners: len(e.owners)}
 	for _, item := range e.tasks {
 		if item.State == "queued" {
@@ -538,8 +534,7 @@ func (e *Engine) Stats() Stats {
 }
 
 func (e *Engine) Ack(owner Owner, sequence uint64) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("ack", owner, "")()
 	if e.closing {
 		return ErrClosed
 	}
@@ -575,8 +570,7 @@ func (e *Engine) Ack(owner Owner, sequence uint64) error {
 }
 
 func (e *Engine) CloseRun(owner Owner) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("close_run", owner, "")()
 	if e.closing {
 		return ErrClosed
 	}
@@ -751,6 +745,9 @@ func (e *Engine) dispatch() bool {
 			status := item.Status
 			status.State = "running"
 			status.Timing.StartedNS = time.Now().UnixNano()
+			if e.config.Trace != nil {
+				e.config.Trace(TraceEvent{Phase: "dispatch_assigned", Owner: owner, TaskID: item.Task.ID, StartNS: status.Timing.StartedNS, EndNS: status.Timing.StartedNS})
+			}
 			if e.save(record{Task: &status}) != nil {
 				return false
 			}
@@ -773,14 +770,18 @@ func (e *Engine) dispatch() bool {
 
 func (e *Engine) execute(ctx context.Context, key string, task Task) {
 	result := Result{State: "failed"}
+	ctx = withExecutionTrace(ctx, e.config.Trace, task)
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			result = Result{State: "failed", Error: fmt.Sprint("executor panic: ", recovered)}
 		}
-		e.finished <- finished{key, result}
+		returned := time.Now()
+		e.finished <- finished{key: key, result: result, owner: task.Owner, id: task.ID, returned: returned}
 	}()
+	admissionStart := time.Now()
 	if e.config.BeforeExecute != nil {
 		if err := e.config.BeforeExecute(ctx, task); err != nil {
+			e.traceSpan("admission", task, "denied", admissionStart)
 			result.Error = "execution admission: " + err.Error()
 			if ctx.Err() != nil {
 				result.State = "cancelled"
@@ -788,6 +789,7 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 			return
 		}
 	}
+	e.traceSpan("admission", task, "allowed", admissionStart)
 	if ctx.Err() != nil {
 		result = Result{State: "cancelled", Error: ctx.Err().Error()}
 		return
@@ -801,24 +803,25 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 func (e *Engine) loop() {
 	defer close(e.done)
 	for {
-		e.mu.Lock()
+		unlock := e.lock("dispatch", Owner{}, "")
 		for !e.closing && e.fatal == nil && e.active < e.config.Concurrency && e.dispatch() {
 		}
 		stop := (e.closing || e.fatal != nil) && e.active == 0
-		e.mu.Unlock()
+		unlock()
 		if stop {
 			return
 		}
 		select {
 		case <-e.wake:
 		case outcome := <-e.finished:
-			e.mu.Lock()
+			unlock := e.lock("completion", outcome.owner, outcome.id)
+			e.traceSpan("completion_handoff", Task{Owner: outcome.owner, ID: outcome.id}, "", outcome.returned)
 			item := e.tasks[outcome.key]
 			item.cancel()
 			item.cancel = nil
 			e.active--
 			_ = e.complete(outcome.key, outcome.result)
-			e.mu.Unlock()
+			unlock()
 		}
 	}
 }

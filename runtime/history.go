@@ -345,8 +345,7 @@ func (e *Engine) EventPage(owner Owner, options PageOptions) (ArchivePage, error
 }
 
 func (e *Engine) resultPage(owner Owner, options PageOptions, archive bool) (ArchivePage, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("page", owner, "")()
 	return e.resultPageLocked(owner, options, archive)
 }
 

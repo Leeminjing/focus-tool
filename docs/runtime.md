@@ -68,6 +68,8 @@ await adapter.submit(
 
 服务默认在每次实际执行前发 authorize 请求，Python 适配器核对工具注册、身份、工作区和参数，然后执行 `before_execute` 回调。回调可同步或异步，拒绝或异常会形成失败事件，不启动工具。缺失适配器授权处理时默认拒绝。直接使用 Go API 时通过 Config.BeforeExecute 接入相同检查；可信独立 Go 实验可以不配置该钩子。
 
+诊断追踪默认关闭。Go 可配置 `Config.Trace`，CLI 使用 `-trace <新的 JSONL 路径>`；Python `RuntimeClient.start` 可传 `trace_path` 和同步 `trace` 回调。诊断缓冲不 fsync、不替代执行事实或消费回执。子进程的内部计时帧会在 Go 执行器内解包，原结果与归属不变；取消仍等待实际退出。阶段定义及独立基准见 [短工具测量合同](short-tools-method.md)。
+
 `Run.revise` 持久化新版本并撤销旧版本的排队／运行任务。旧版本终态仍保存，Run 在决策入口拒收并确认该失效事实。当前版本策略保守地撤销全部旧任务；跨版本保留兼容结果仍属后续优化。
 
 取消状态严格区分 cancel_requested 和 cancelled。排队取消不启动进程；运行中请求取消后，必须等待执行器返回、直接子进程 Wait 回收后才释放执行槽与冲突资源。取消和正常结束竞态允许记录 completed，以真实退出结果为准。`Run.close` 禁止新提交并取消未完成任务，同时持久地把剩余结果收尾责任转交给 runtime_archive；运行时 close 等待活动执行退出。

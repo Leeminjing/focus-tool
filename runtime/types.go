@@ -127,6 +127,7 @@ type Config struct {
 	Journal        string // Empty means memory only. One runtime must own a journal file.
 	Executors      map[string]Executor
 	BeforeExecute  func(context.Context, Task) error
+	Trace          TraceFunc // Optional diagnostics; does not change WAL acknowledgement policy.
 }
 
 type RunState struct {

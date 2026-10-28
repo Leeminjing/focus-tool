@@ -99,7 +99,7 @@ func (a *approvals) answer(req request) error {
 	}
 }
 
-func serve() error {
+func serve() (serveError error) {
 	journal := flag.String("journal", ".focus-tool/runtime.jsonl", "durable local JSONL journal; empty disables persistence")
 	concurrency := flag.Int("concurrency", 4, "maximum executing tasks")
 	capacity := flag.Int("capacity", 128, "maximum outstanding tasks")
@@ -107,12 +107,23 @@ func serve() error {
 	maxRuns := flag.Int("max-active-runs", 0, "resident open Run bound; 0 uses max(128, capacity)")
 	segmentBytes := flag.Int64("segment-bytes", 0, "WAL segment size before online compaction; 0 uses 8 MiB")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
+	tracePath := flag.String("trace", "", "optional fresh diagnostic JSONL path; buffered, not execution facts")
 	flag.Parse()
+	trace, closeTrace, err := openTrace(*tracePath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := closeTrace(); serveError == nil {
+			serveError = err
+		}
+	}()
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
 	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
 	config.PerRunCapacity = *perRunCapacity
 	config.MaxActiveRuns, config.SegmentBytes = *maxRuns, *segmentBytes
+	config.Trace = trace
 	if *requireApproval {
 		config.BeforeExecute = gates.check
 	}
@@ -131,8 +142,13 @@ func serve() error {
 		var cursor uint64
 		for {
 			for _, event := range engine.Pending(cursor) {
+				started := time.Now()
 				if err := out.send(map[string]any{"type": "event", "event": event}); err != nil {
 					return
+				}
+				if trace != nil {
+					end := time.Now()
+					trace(tool.TraceEvent{Phase: "server_event_send", Owner: event.Task.Owner, TaskID: event.Task.ID, Sequence: event.Sequence, StartNS: started.UnixNano(), EndNS: end.UnixNano(), DurationNS: end.Sub(started).Nanoseconds()})
 				}
 				cursor = event.Sequence
 			}
@@ -146,6 +162,7 @@ func serve() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 4096), 4<<20)
 	for scanner.Scan() {
+		started := time.Now()
 		var req request
 		if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
 			return fmt.Errorf("invalid request: %w", err)
@@ -208,6 +225,7 @@ func serve() error {
 		if writeErr := out.send(response); writeErr != nil {
 			return writeErr
 		}
+		serverSpan(trace, "server_request", req, started)
 		if req.Method == "close" {
 			return err
 		}

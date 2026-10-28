@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import json
+import time
 from collections import defaultdict, deque
 from .transport import ThreadedProcess
 
@@ -39,9 +40,10 @@ class _Mailbox:
 class RuntimeClient:
     """One daemon connection shared by many Context/Run mailboxes."""
 
-    def __init__(self, process, authorize=None):
+    def __init__(self, process, authorize=None, trace=None):
         self.process = process
         self.authorize = authorize
+        self.trace = trace
         self._serial = 0
         self._pending = {}
         self._mailboxes = defaultdict(_Mailbox)
@@ -58,18 +60,27 @@ class RuntimeClient:
 
     @classmethod
     async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0,
-                    max_active_runs=0, segment_bytes=0, cwd=None, authorize=None):
+                    max_active_runs=0, segment_bytes=0, cwd=None, authorize=None, trace=None, trace_path=None):
         argv = [*command, "-journal", str(journal), "-concurrency", str(concurrency),
                 "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity),
                 "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes), "-require-approval=true"]
+        if trace_path is not None:
+            argv.extend(["-trace", str(trace_path)])
         try:
             process = await asyncio.create_subprocess_exec(*argv, cwd=cwd, stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, limit=8 << 20)
         except NotImplementedError:
             process = ThreadedProcess(argv, cwd=cwd)
-        return cls(process, authorize)
+        return cls(process, authorize, trace)
+
+    def _trace(self, phase, *, start_ns, mono_ns, owner=None, task_id=None, **fields):
+        if self.trace is not None:
+            self.trace({"clock": "python_client", "phase": phase, "start_ns": start_ns,
+                        "end_ns": time.time_ns(), "duration_ns": time.perf_counter_ns() - mono_ns,
+                        "owner": owner or {}, "task_id": task_id or "", **fields})
 
     async def request(self, method, **fields):
+        wall, mono = time.time_ns(), time.perf_counter_ns()
         if self._closed.is_set():
             raise RemoteRejected("request not sent; runtime connection closed: " + self.stderr.decode(errors="replace"))
         self._serial += 1
@@ -78,13 +89,22 @@ class RuntimeClient:
         future = asyncio.get_running_loop().create_future()
         self._pending[identity] = future
         try:
+            write_wall, write_mono = time.time_ns(), time.perf_counter_ns()
             self.process.stdin.write(frame)
             await self.process.stdin.drain()
+            task = fields.get("task", {})
+            self._trace("client_write", start_ns=write_wall, mono_ns=write_mono, operation=method,
+                        request_id=identity, owner=task.get("owner", fields.get("owner")),
+                        task_id=task.get("id", fields.get("task_id")), sequence=fields.get("sequence", 0))
             return await future
         except (BrokenPipeError, ConnectionError, OSError) as error:
             raise TransportError("connection failed; request acceptance is unknown") from error
         finally:
             self._pending.pop(identity, None)
+            task = fields.get("task", {})
+            self._trace("client_request", start_ns=wall, mono_ns=mono, operation=method, request_id=identity,
+                        owner=task.get("owner", fields.get("owner")), task_id=task.get("id", fields.get("task_id")),
+                        sequence=fields.get("sequence", 0))
 
     async def _read_stderr(self):
         while data := await self.process.stderr.read(4096):
@@ -108,6 +128,8 @@ class RuntimeClient:
                     event = frame["event"]
                     owner = event["task"]["owner"]
                     key = owner["context_id"], owner["run_id"]
+                    self._trace("client_receive", start_ns=time.time_ns(), mono_ns=time.perf_counter_ns(),
+                                owner=owner, task_id=event["task"]["id"], sequence=event["sequence"])
                     if key in self._subscriptions:
                         self._mailboxes[key].put(event)
                 elif frame["type"] == "authorize":

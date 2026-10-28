@@ -38,6 +38,15 @@ python benchmarks/retention.py --out results/local/retention.json
 
 真实 Focus 接入需要其现有 Python 环境、源码与本机缓存的 PostgreSQL Docker 镜像，复现方法见 [接入说明](integration/focus/README.md)。核心测试不要求安装这些额外依赖。
 
+短工具阶段测量须单独运行，避免与测试或其他实验并行：
+
+```powershell
+python benchmarks/short_tools.py --out results/local/short-tools/report.json
+python benchmarks/analyze_short_tools.py results/local/short-tools/report.json --out results/local/short-tools/summary.json
+```
+
+该基准覆盖单／多 Context、真实多轮压缩、追踪开／关对照及读回核验的耐久后续产物；每轮原始轨迹以 gzip JSONL 保存。阶段、时钟和统计范围见 [测量合同](docs/short-tools-method.md)。
+
 运行保留的 M1 性能对照：
 
 ```powershell
@@ -81,6 +90,8 @@ python -m unittest discover -s python/tests -v
 - [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
 - [历史分页与有界状态](docs/history-retention.md)：保留策略、磁盘布局、压缩恢复、游标及万次完整链路实验。
 - [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
+- [短工具测量合同](docs/short-tools-method.md)：持久确认、准入、进程／函数、交付／消费、压缩和锁等待的精确边界。
+- [短工具实测与优化选择](docs/short-tools-results.md)：单／多 Context 分位数、54 次压缩、追踪扰动；下一项选择有界 Python worker 池。
 - `runtime`：共享调度器、Python／进程执行器、资源与依赖、耐久事件和结果路由。
 - `cmd/runtime`：本地 stdio JSONL 服务，一个连接可承载多个 Context 的 Run。
 - `python/focus_tool`：Focus 调用适配层、执行前检查、按 Run 分发与消费结果。

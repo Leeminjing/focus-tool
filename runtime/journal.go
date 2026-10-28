@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type record struct {
@@ -226,15 +227,51 @@ func (e *Engine) save(item record) error {
 		return nil
 	}
 	item.Version = 2
+	started := time.Now()
 	data, err := json.Marshal(item)
+	encoded := time.Now()
 	if err == nil && len(data)+1 > maxRecordBytes {
 		err = fmt.Errorf("journal frame exceeds limit")
 	}
 	if err == nil {
 		_, err = e.journal.file.Write(append(data, '\n'))
 	}
+	appended := time.Now()
 	if err == nil {
 		err = e.journal.file.Sync()
+	}
+	if e.config.Trace != nil {
+		end := time.Now()
+		event := TraceEvent{Phase: "wal_sync", Operation: e.traceOperation, StartNS: started.UnixNano(), EndNS: end.UnixNano(), DurationNS: end.Sub(started).Nanoseconds(), Bytes: len(data) + 1, State: "synced"}
+		if err != nil {
+			event.State = "failed"
+		}
+		if item.Run != nil {
+			event.Owner = item.Run.Owner
+		}
+		if item.Task != nil {
+			event.Owner = item.Task.Task.Owner
+			event.TaskID = item.Task.Task.ID
+			event.State = item.Task.State
+			if err != nil {
+				event.State = "failed"
+			}
+		}
+		if item.Event != nil {
+			event.Sequence = item.Event.Sequence
+		}
+		e.config.Trace(event)
+		for _, part := range []struct {
+			name       string
+			start, end time.Time
+		}{{"wal_encode", started, encoded}, {"wal_append", encoded, appended}, {"wal_fsync", appended, end}} {
+			span := event
+			span.Phase = part.name
+			span.StartNS = part.start.UnixNano()
+			span.EndNS = part.end.UnixNano()
+			span.DurationNS = part.end.Sub(part.start).Nanoseconds()
+			e.config.Trace(span)
+		}
 	}
 	if err == nil {
 		if item.Task != nil {
@@ -248,7 +285,7 @@ func (e *Engine) save(item record) error {
 		}
 		e.journal.bytes += int64(len(data) + 1)
 		if e.journal.bytes >= e.config.SegmentBytes {
-			err = e.journal.compact(e.history)
+			err = e.compact(item)
 		}
 	}
 	if err != nil {
@@ -257,10 +294,31 @@ func (e *Engine) save(item record) error {
 	return nil
 }
 
+func (e *Engine) compact(cause record) error {
+	start := time.Now()
+	count := len(e.journal.tasks) + len(e.journal.events) + len(e.journal.runs)
+	err := e.journal.compact(e.history)
+	if e.config.Trace != nil {
+		end := time.Now()
+		event := TraceEvent{Phase: "compaction", Operation: e.traceOperation, StartNS: start.UnixNano(), EndNS: end.UnixNano(), DurationNS: end.Sub(start).Nanoseconds(), Records: count, State: "completed"}
+		if cause.Run != nil {
+			event.Owner = cause.Run.Owner
+		}
+		if cause.Task != nil {
+			event.Owner = cause.Task.Task.Owner
+			event.TaskID = cause.Task.Task.ID
+		}
+		if err != nil {
+			event.State = "failed"
+		}
+		e.config.Trace(event)
+	}
+	return err
+}
+
 // Compact never deletes canonical facts, identities, dependencies or fences.
 func (e *Engine) Compact() error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	defer e.lock("compact", Owner{}, "")()
 	if e.closing {
 		return ErrClosed
 	}
@@ -270,7 +328,7 @@ func (e *Engine) Compact() error {
 	if e.journal == nil {
 		return fmt.Errorf("compaction requires a durable journal")
 	}
-	if err := e.journal.compact(e.history); err != nil {
+	if err := e.compact(record{}); err != nil {
 		return e.storageFailure(err)
 	}
 	return nil

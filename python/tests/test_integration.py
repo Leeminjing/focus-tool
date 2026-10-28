@@ -71,9 +71,9 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 await client.close()
         self.directory.cleanup()
 
-    async def start(self, *, journal="events.jsonl", hook=None, concurrency=2, capacity=16):
+    async def start(self, *, journal="events.jsonl", hook=None, concurrency=2, capacity=16, trace_path=None, trace=None):
         client = await RuntimeClient.start([str(self.binary)], journal=self.workspace / journal,
-                                           concurrency=concurrency, capacity=capacity)
+                                           concurrency=concurrency, capacity=capacity, trace_path=trace_path, trace=trace)
         self.clients.append(client)
         tools = {name: ToolDefinition("python", module="tools", function=function)
                  for name, function in {"start_check": "read_config", "start_repair": "repair_config",
@@ -337,6 +337,26 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         event = await self.event(other)
         self.assertEqual(json.loads(event["result"]["output"]), {"value": 42})
         await other.ack(event)
+
+    async def test_optional_trace_preserves_values_and_records_worker_and_durability_boundaries(self):
+        path = self.workspace / "diagnostic.jsonl"
+        client_trace = []
+        client, adapter = await self.start(trace_path=path, trace=client_trace.append)
+        run = await client.open_run("A", "traced")
+        value = {"integer": 9007199254740993, "text": '\\"\n' * 50000}
+        await adapter.submit(run, parent_message_id="m", call_id="x", name="start_echo", args={"value": value})
+        event = await self.event(run)
+        self.assertEqual(json.loads(event["result"]["output"]), {"value": value})
+        await run.ack(event)
+        await client.close()
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        job = adapter.job_id("m", "x")
+        phases = {row["phase"] for row in rows if row.get("task_id") == job}
+        self.assertTrue({"worker_bootstrap", "module_import", "tool_body", "result_encode", "process_start", "process_wait",
+                         "admission", "wal_sync", "completion_handoff"} <= phases, phases)
+        self.assertTrue(all(row["duration_ns"] >= 0 for row in rows))
+        self.assertTrue(any(row["phase"] == "client_receive" and row["sequence"] == event["sequence"] for row in client_trace))
+        self.assertTrue(any(row["phase"] == "client_request" and row["operation"] == "ack" for row in client_trace))
 
 
 if __name__ == "__main__":
