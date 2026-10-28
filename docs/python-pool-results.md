@@ -73,6 +73,8 @@
 
 本机 [完整验证记录](../results/python-pool-verification-2026-10-28.json) 的五个步骤全部通过：`go test ./...`、`go vet ./...`、Python **26 项**测试、完整架构 Demo、固定源码真实 Focus 三例。分析修正后两项分析测试另行通过；真实 Focus 再以 [池模式](../results/python-pool-focus-reuse-2026-10-28.json) 通过允许执行、权限撤销、租约释放，并断言最终 worker 池清空。两种模式均使用既有 Focus 环境和临时独立 PostgreSQL 容器，未修改 Focus 源码或正式数据库。
 
+首次 CI 的 Linux 测试与 race 通过；Windows 暴露 cwd 测试将同一目录的路径别名误作状态泄漏。断言已改为 `os.Stat`／`os.SameFile` 检查实际目录身份，仍要求每次调用回到正确工作区；没有更改运行时或重采性能数据。修正后的 [本地四步复验](../results/python-pool-verification-final-2026-10-28.json) 单独保存，真实 Focus 两模式的记录沿用上述实际执行结果。
+
 新增 Go／Python 测试覆盖：连续调用复用和总量上限、不同工作区替换、权限在池等待后撤销、未登记调用不能启动解释器、旧调用取消不误杀后继任务、运行中取消等待退出、worker 崩溃不重放、异常与输出超限、模块全局／cwd／环境／输出清理、线程／async 后台任务／同步函数遗留 event loop／退出钩子拒绝，以及寿命上限回收。成功的复用调用依靠可信工具协作契约，不提供任意 Python／native 代码沙箱或后代进程治理。
 
 另修复截断 trace 诊断帧提前返回绕过逻辑输出上限的问题：实际 Go→Python 回归先复现 `OutputLimit=128` 却返回 4352 字节，再确认修复后正文受限，保留取消优先级。M1 代码保持原样并重跑 `go run ./cmd/lab`；其数字不作为本轮 pool 性能证据。

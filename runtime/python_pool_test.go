@@ -127,7 +127,14 @@ func TestPoolReuseFreshModuleCwdEnvironmentAndOutput(t *testing.T) {
 		if err := json.Unmarshal([]byte(result.Output), &output); err != nil {
 			t.Fatal(err, result)
 		}
-		if output.Counter != 1 || filepath.Clean(output.Cwd) != filepath.Clean(job.Directory) || output.Dirty != "clean" {
+		actualDirectory, actualErr := os.Stat(output.Cwd)
+		expectedDirectory, expectedErr := os.Stat(job.Directory)
+		// Windows temp paths may use 8.3 aliases; the worker uses a resolved
+		// workspace. Assert directory identity, not spelling or case.
+		if actualErr != nil || expectedErr != nil || !os.SameFile(actualDirectory, expectedDirectory) {
+			t.Fatalf("working directory changed: got %q (%v), want %q (%v)", output.Cwd, actualErr, job.Directory, expectedErr)
+		}
+		if output.Counter != 1 || output.Dirty != "clean" {
 			t.Fatal("state leaked", output)
 		}
 	}
