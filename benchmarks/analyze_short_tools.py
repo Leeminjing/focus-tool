@@ -228,6 +228,8 @@ def analyze_trial(directory, trial):
 
 def analyze(report_path):
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    if report.get("complete", True) is not True:
+        raise ValueError("collection is incomplete; retain failure traces but do not publish acceptance statistics")
     trials = [analyze_trial(report_path.parent, trial) for trial in report["trials"]]
     controls = [analyze_trial(report_path.parent, trial) for trial in report["tracing_controls"]]
     return {"quantiles": "nearest-rank; milliseconds; per-trial distributions, no claim of statistical significance",

@@ -6,10 +6,17 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "benchmarks"))
-from analyze_short_tools import analyze_trial, distribution, overlap_ns
+from analyze_short_tools import analyze, analyze_trial, distribution, overlap_ns
 
 
 class ShortToolAnalysisTests(unittest.TestCase):
+    def test_incomplete_collection_cannot_be_summarized(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "report.json"
+            path.write_text(json.dumps({"complete": False, "trials": [], "tracing_controls": []}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "incomplete"):
+                analyze(path)
+
     def test_nearest_rank_percentiles_and_union_overlap(self):
         result = distribution(list(range(1, 21)))
         self.assertEqual((result["p50"], result["p95"], result["p99"]), (10, 19, 20))

@@ -51,11 +51,16 @@ type approvals struct {
 	next    atomic.Uint64
 	waiting map[uint64]chan string
 	out     *writer
+	timeout time.Duration
 }
 
 func (a *approvals) check(ctx context.Context, task tool.Task) error {
 	// A stopped or disconnected client cannot retain an execution slot forever.
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	budget := a.timeout
+	if budget == 0 {
+		budget = 30 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, budget)
 	defer cancel()
 	token := a.next.Add(1)
 	reply := make(chan string, 1)
@@ -108,10 +113,14 @@ func serve() (serveError error) {
 	segmentBytes := flag.Int64("segment-bytes", 0, "WAL segment size before online compaction; 0 uses 8 MiB")
 	compactionMode := flag.String("compaction-mode", "background", "background bounded compaction or sync comparison baseline")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
+	approvalTimeout := flag.Duration("approval-timeout", 30*time.Second, "maximum execution-admission reply wait; positive duration")
 	tracePath := flag.String("trace", "", "optional fresh diagnostic JSONL path; buffered, not execution facts")
 	pythonWorkers := flag.Int("python-workers", 0, "bounded persistent workers for registered reuse-eligible Python tools; 0 keeps fresh processes")
 	workerTasks := flag.Int("python-worker-tasks", 256, "maximum successful calls before recycling a Python worker")
 	flag.Parse()
+	if *approvalTimeout <= 0 {
+		return fmt.Errorf("approval timeout must be positive")
+	}
 	trace, closeTrace, err := openTrace(*tracePath)
 	if err != nil {
 		return err
@@ -122,7 +131,7 @@ func serve() (serveError error) {
 		}
 	}()
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
-	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
+	gates := &approvals{waiting: map[uint64]chan string{}, out: out, timeout: *approvalTimeout}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
 	if *pythonWorkers < 0 {
 		return fmt.Errorf("negative Python worker bound")

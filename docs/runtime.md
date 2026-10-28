@@ -68,6 +68,8 @@ await adapter.submit(
 
 服务默认在每次实际执行前发 authorize 请求，Python 适配器核对工具注册、身份、工作区和参数，然后执行 `before_execute` 回调。回调可同步或异步，拒绝或异常会形成失败事件，不启动工具。缺失适配器授权处理时默认拒绝。直接使用 Go API 时通过 Config.BeforeExecute 接入相同检查；可信独立 Go 实验可以不配置该钩子。
 
+授权回执等待默认最多 30 秒，CLI `-approval-timeout 5m` 可显式设置正时长；更短的单任务 timeout 仍优先到期，不跳过准入。默认段压缩长负载基准对两臂都显式使用 300 秒授权与工具预算，以测量同步停顿超过 30 秒的情形；这不是默认 30 秒条件下全部调用成功的证据。
+
 ### 可选 Python 常驻池
 
 默认 `python_workers=0`／`-python-workers 0`，仍逐任务启动进程。启用时同时设置 `RuntimeClient.start(..., python_workers=4, python_worker_tasks=256)` 和可信 `ToolDefinition("python", ..., reuse=True)`；CLI 对应 `-python-workers`、`-python-worker-tasks`。后者限制每个 worker 成功执行次数，达到上限后回收替换。普通工具参数不能设置复用元数据；未登记或与登记不符的请求在准入时拒绝。

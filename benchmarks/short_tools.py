@@ -44,7 +44,7 @@ def archive_trace(source, destination):
 
 
 async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, tracing, warmup, mode="fresh",
-                compaction_mode="background", drain_compaction=True, sample_every=0):
+                compaction_mode="background", drain_compaction=True, sample_every=0, timeout_ms=30000):
     with tempfile.TemporaryDirectory(prefix="focus-short-tools-") as name:
         directory = Path(name)
         shutil.copyfile(ROOT / "benchmarks/short_tools_workload.py", directory / "short_tools_fixture.py")
@@ -59,12 +59,12 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             stream.write(json.dumps(event, separators=(",", ":"), ensure_ascii=False) + "\n")
 
         lifecycle_start = time.perf_counter_ns()
-        client = await RuntimeClient.start([str(binary)], journal=directory / "runtime.jsonl",
+        client = await RuntimeClient.start([str(binary), "-approval-timeout", f"{timeout_ms}ms"], journal=directory / "runtime.jsonl",
             concurrency=4, capacity=64, per_run_capacity=16, max_active_runs=8,
             segment_bytes=segment_bytes, trace=emit if tracing else None,
             trace_path=go_trace if tracing else None, python_workers=4 if mode == "pool" else 0,
             compaction_mode=compaction_mode)
-        adapter = FocusToolAdapter(client, {name: ToolDefinition("python", module="short_tools_fixture", function=name, reuse=True)
+        adapter = FocusToolAdapter(client, {name: ToolDefinition("python", module="short_tools_fixture", function=name, reuse=True, timeout_ms=timeout_ms)
             for name in NAMES}, workspace=directory,
             before_execute=lambda task: Path(task["directory"]).resolve() == directory.resolve())
         runs = []
@@ -90,7 +90,7 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             for index in range(min(depth, count)):
                 await enqueue(index)
             for number in range(count):
-                event = await asyncio.wait_for(run.next_event(), 60)
+                event = await asyncio.wait_for(run.next_event(), max(60, timeout_ms/1000+30))
                 consumed, consumed_mono = time.time_ns(), time.perf_counter_ns()
                 assert event["result"]["state"] == "completed", event
                 wall, mono, index = starts.pop(event["task"]["id"])
@@ -127,6 +127,13 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
                     await enqueue(number + depth)
             return totals
 
+        def archive_failure(error):
+            archive_trace(py_trace, output.parent / (identity+".failed.client.jsonl.gz"))
+            if tracing and go_trace.exists():
+                archive_trace(go_trace, output.parent / (identity+".failed.go.jsonl.gz"))
+            write_durable(output.parent / (identity+".failure.json"), {"trial": identity, "error": repr(error)})
+
+        failure = None
         try:
             runs = [await client.open_run(f"C{n}", "run") for n in range(contexts)]
             cold_start = time.perf_counter_ns()
@@ -151,18 +158,32 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             artifacts = persisted
             for run in runs:
                 await run.close()
+        except BaseException as error:
+            failure = error
+            raise
         finally:
-            shutdown = await client.close()
-            stream.close()
+            try:
+                shutdown = await client.close()
+            except BaseException as error:
+                failure = error
+                raise
+            finally:
+                stream.close()
+                if failure is not None:
+                    archive_failure(failure)
         lifecycle_ns = time.perf_counter_ns() - lifecycle_start
-        assert client.process.returncode == 0, client.stderr.decode(errors="replace")
-        final = {kind: sum(artifact[kind] for artifact in artifacts) for kind in expected}
-        target = {kind: expected[kind] * jobs // 3 for kind in expected}
-        assert final == target, (final, target)
-        assert after["unacknowledged"] == after["retained_tasks"] == 0, after
-        if mode == "pool":
-            assert after["python_pool"]["peak_live"] <= 4
-            assert shutdown["python_pool"]["live"] == shutdown["python_pool"]["reserved"] == 0, shutdown
+        try:
+            assert client.process.returncode == 0, client.stderr.decode(errors="replace")
+            final = {kind: sum(artifact[kind] for artifact in artifacts) for kind in expected}
+            target = {kind: expected[kind] * jobs // 3 for kind in expected}
+            assert final == target, (final, target)
+            assert after["unacknowledged"] == after["retained_tasks"] == 0, after
+            if mode == "pool":
+                assert after["python_pool"]["peak_live"] <= 4
+                assert shutdown["python_pool"]["live"] == shutdown["python_pool"]["reserved"] == 0, shutdown
+        except BaseException as error:
+            archive_failure(error)
+            raise
         destination = output.parent
         client_name = identity + ".client.jsonl.gz"
         archive_trace(py_trace, destination / client_name)
@@ -172,6 +193,7 @@ async def trial(binary, output, identity, *, contexts, jobs, segment_bytes, trac
             archive_trace(go_trace, destination / go_name)
         return {"id": identity, "contexts": contexts, "jobs": jobs, "segment_bytes": segment_bytes, "execution_mode": mode,
                 "compaction_mode": compaction_mode, "drain_compaction": drain_compaction,
+                "timeout_ms": timeout_ms,
                 "post_workload_drain_ns": drain_ns, "stats_samples": samples,
                 "tracing": tracing, "elapsed_ns": elapsed, "throughput_per_s": jobs * 1e9 / elapsed,
                 "compactions": after["compactions"] - before["compactions"], "before": before, "after": after,

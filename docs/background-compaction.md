@@ -68,3 +68,11 @@ Cold startup and final builder/worker cleanup are included separately.
 Trace-on/off controls and a deliberately stalled builder must establish that
 one-segment backlog/cache bounds hold without hiding backpressure or claiming
 steady memory from a finite run. Patrol cross-Run integration remains pending.
+
+The initial 30 s-budget collection hit an admission timeout in a synchronous
+default-segment trial and is retained as incomplete failure evidence. Formal
+long-load collection explicitly uses the same 300 s tool/admission budget in both
+arms; the runtime default stays 30 s. Each finished trial is checkpointed outside
+the measurement window. Failed traces remain labelled, and the analyzer refuses
+an explicitly incomplete report. Publication's brief Engine lock sections are
+also traced, separately from the outside-lock build and fsync phases.

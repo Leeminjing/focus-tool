@@ -106,9 +106,9 @@ func (e *Engine) buildCompaction(j *journal, segment *sealedSegment) {
 		e.traceCompaction("compaction_publish", segment, compactionState(err), start)
 	}
 	if err == nil {
-		e.mu.Lock()
+		unlock := e.lock("compaction_visible", Owner{}, "")
 		j.publishedThrough, j.generation = segment.through, segment.generation
-		e.mu.Unlock()
+		unlock()
 		err = e.compactionStep("visible")
 	}
 	if err == nil {
@@ -119,7 +119,7 @@ func (e *Engine) buildCompaction(j *journal, segment *sealedSegment) {
 		}
 		e.traceCompaction("compaction_retire", segment, compactionState(err), start)
 	}
-	e.mu.Lock()
+	unlock := e.lock("compaction_finish", Owner{}, "")
 	segment.finished = true
 	if err != nil {
 		e.storageFailure(fmt.Errorf("background compaction: %w", err))
@@ -131,7 +131,7 @@ func (e *Engine) buildCompaction(j *journal, segment *sealedSegment) {
 	// drains its diagnostics. Sub-spans never imply durable execution success.
 	e.traceCompaction("compaction", segment, compactionState(err), wholeStart)
 	close(segment.done)
-	e.mu.Unlock()
+	unlock()
 }
 
 func compactionState(err error) string {
