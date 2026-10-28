@@ -63,7 +63,10 @@ python benchmarks/analyze_short_tools.py results/local/python-pool/report.json -
 ```powershell
 python benchmarks/compaction.py --out results/local/compaction/report.json
 python benchmarks/analyze_short_tools.py results/local/compaction/report.json --out results/local/compaction/summary.json
+python benchmarks/compaction_summary.py results/local/compaction/report.json --out results/local/compaction/overview.json
 ```
+
+[压缩实测与恢复验收](docs/compaction-results.md) 覆盖 48,096 个测量任务与 138 次主对照压缩：小段压力组的尾延迟改善；默认段的极端停顿缩短，但典型延迟和总吞吐存在回退，保留全部原始结果与中断采集记录。
 
 运行保留的 M1 性能对照：
 

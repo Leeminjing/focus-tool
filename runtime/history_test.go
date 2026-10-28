@@ -104,7 +104,9 @@ func TestRunChurnRemovesResidentHistoryAndPreservesClosedCustody(t *testing.T) {
 		if stats.Tasks != 0 || stats.Events != 0 || stats.Runs != 0 || stats.QueueOwners != 0 {
 			t.Fatalf("resident history after %d: %+v", n, stats)
 		}
-		if stats.JournalBytes >= config.SegmentBytes {
+		// Each fixture frame is smaller than the 2 KiB target. Background
+		// mode may keep a full active segment while one sealed builder runs.
+		if stats.JournalBytes >= 2*config.SegmentBytes || stats.PendingBytes >= 2*config.SegmentBytes || stats.PendingSegments > 1 || stats.CompactionWorkers > 1 {
 			t.Fatalf("recent history exceeds segment policy: %+v", stats)
 		}
 		if receipt := e.Archive(owner); receipt.Custodian != "runtime_archive" || receipt.Unacknowledged != n%2 {

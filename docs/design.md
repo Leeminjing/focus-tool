@@ -79,7 +79,7 @@ Runner 只限制同时执行的直接子进程数，未提供跨 Context 公平�
 
 进程复用已按短工具测量实现为可选有界池；只读缓存、跨 Context 合并及模型流中的推测派发仍待研究。应加入“早结果不改变方向”的负对照和“过度唤醒反而变慢”的场景，防止只选能获益的任务。
 
-2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)。[短工具阶段实测](short-tools-results.md) 选出的有界 Python worker 池现已实现并完成 [同负载对照](python-pool-results.md)，覆盖冷启动、单／多 Context、120 次压缩与追踪控制。下一项研究压缩持锁和安全切换；之后补 Patrol 跨 Run inbox 桥接、checkpoint／ack 重启点与 queued 恢复握手。两项尚未实现，不能将本轮短工具收益解释为生产 Patrol 已接通或长期性能已解决。
+2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)，以及 [可信 Python worker 复用](python-pool-results.md)。本轮的 [有界后台压缩与耐久发布](compaction-results.md) 已覆盖默认段多轮负载、背压、七个真实崩溃边界及 138 次主对照压缩；长时间持有 Engine 锁明显缩短，但典型 I/O 延迟和总吞吐仍有取舍。下一项为尚未实现的 Patrol 跨 Run inbox 桥接、checkpoint／ack 重启点和 queued 恢复握手。不能将有限本地负载验收解释为生产 Patrol 已接通或长期性能已解决。
 
 ## Focus 接入所需设计
 
