@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	goruntime "runtime"
 	"strconv"
@@ -33,7 +32,8 @@ type Engine struct {
 	active   int
 	events   []Completion
 	sequence uint64
-	journal  *os.File
+	journal  *journal
+	history  *history
 	fatal    error
 	closing  bool
 	wake     chan struct{}
@@ -63,50 +63,50 @@ func New(config Config) (*Engine, error) {
 	if config.PerRunCapacity < 1 {
 		return nil, fmt.Errorf("per-run capacity must be positive")
 	}
+	if config.MaxActiveRuns == 0 {
+		config.MaxActiveRuns = max(128, config.Capacity)
+	}
+	if config.SegmentBytes == 0 {
+		config.SegmentBytes = 8 << 20
+	}
+	if config.MaxActiveRuns < 1 || config.SegmentBytes < 1 {
+		return nil, fmt.Errorf("run and segment limits must be positive")
+	}
 	executors := make(map[string]Executor, len(config.Executors))
 	for kind, executor := range config.Executors {
 		executors[kind] = executor
 	}
 	config.Executors = executors
-	file, records, err := openJournal(config.Journal)
+	file, history, err := openJournal(config.Journal)
 	if err != nil {
 		return nil, err
 	}
-	e := &Engine{config: config, tasks: map[string]*entry{}, runs: map[Owner]RunState{}, queues: map[Owner][]string{}, journal: file, wake: make(chan struct{}, 1), changed: make(chan struct{}, 1), finished: make(chan finished, config.Concurrency), done: make(chan struct{})}
-	for _, item := range records {
-		if item.Run != nil {
-			e.runs[item.Run.Owner] = *item.Run
-		}
-		if item.Task != nil {
-			status := *item.Task
-			key := taskKey(status.Task.Owner, status.Task.ID)
-			if _, ok := e.tasks[key]; !ok {
-				e.enqueue(status.Task.Owner, key)
-			}
-			e.tasks[key] = &entry{Status: status}
-		}
-		if item.Event != nil {
-			e.events = append(e.events, *item.Event)
-			if item.Event.Sequence > e.sequence {
-				e.sequence = item.Event.Sequence
-			}
+	e := &Engine{config: config, tasks: map[string]*entry{}, runs: map[Owner]RunState{}, queues: map[Owner][]string{}, journal: file, history: history, wake: make(chan struct{}, 1), changed: make(chan struct{}, 1), finished: make(chan finished, config.Concurrency), done: make(chan struct{})}
+	if history != nil {
+		if err := e.restore(); err != nil {
+			file.close()
+			return nil, err
 		}
 	}
 	for key, item := range e.tasks {
 		if item.State == "running" || item.State == "cancel_requested" {
 			if err := e.complete(key, Result{State: "unknown", Error: "runtime restarted during execution; automatic replay prohibited"}); err != nil {
 				if file != nil {
-					file.Close()
+					file.close()
 				}
 				return nil, err
 			}
 		}
 		if item.State == "queued" {
-			run, ok := e.runs[item.Task.Owner]
+			run, ok, err := e.runState(item.Task.Owner)
+			if err != nil {
+				file.close()
+				return nil, err
+			}
 			if !ok || run.Closed || run.Revision != item.Task.Revision {
 				if err := e.complete(key, Result{State: "cancelled", Error: "run closed or revised before recovery"}); err != nil {
 					if file != nil {
-						file.Close()
+						file.close()
 					}
 					return nil, err
 				}
@@ -138,6 +138,102 @@ func (e *Engine) enqueue(owner Owner, key string) {
 	e.queues[owner] = append(e.queues[owner], key)
 }
 
+func (e *Engine) runState(owner Owner) (RunState, bool, error) {
+	if state, ok := e.runs[owner]; ok {
+		return state, true, nil
+	}
+	if e.journal != nil {
+		if state, ok := e.journal.runs[owner]; ok {
+			return state, true, nil
+		}
+	}
+	if e.history != nil {
+		return e.history.run(owner)
+	}
+	return RunState{}, false, nil
+}
+
+func (e *Engine) lookup(owner Owner, id string) (Status, bool, error) {
+	if item := e.tasks[taskKey(owner, id)]; item != nil {
+		return item.Status, true, nil
+	}
+	if e.journal != nil {
+		if status, ok := e.journal.tasks[taskKey(owner, id)]; ok {
+			return status, true, nil
+		}
+	}
+	if e.history != nil {
+		return e.history.status(owner, id)
+	}
+	return Status{}, false, nil
+}
+
+// Durable history is evicted immediately; no LRU of identities or payloads.
+func (e *Engine) prune() {
+	if e.history == nil {
+		return
+	}
+	for key, item := range e.tasks {
+		if terminal(item.State) && item.State != "unknown" {
+			delete(e.tasks, key)
+		}
+	}
+	for owner, state := range e.runs {
+		if state.Closed {
+			delete(e.runs, owner)
+		}
+	}
+	live := e.events[:0]
+	for _, event := range e.events {
+		state, ok := e.runs[event.Task.Owner]
+		if ok && !state.Closed && event.Sequence > state.Ack {
+			live = append(live, event)
+		}
+	}
+	clear(e.events[len(live):])
+	e.events = live
+	// Preserve the next surviving owner when removing empty queues. Taking the
+	// old numeric index modulo the new length can let a busy Run cut in line.
+	nextOwner := Owner{}
+	for offset := 0; offset < len(e.owners); offset++ {
+		owner := e.owners[(e.next+offset)%len(e.owners)]
+		for _, key := range e.queues[owner] {
+			if item := e.tasks[key]; item != nil && item.State == "queued" {
+				nextOwner = owner
+				break
+			}
+		}
+		if nextOwner.ContextID != "" {
+			break
+		}
+	}
+	owners := e.owners[:0]
+	for _, owner := range e.owners {
+		queue := e.queues[owner][:0]
+		for _, key := range e.queues[owner] {
+			if item := e.tasks[key]; item != nil && item.State == "queued" {
+				queue = append(queue, key)
+			}
+		}
+		clear(e.queues[owner][len(queue):])
+		if len(queue) == 0 {
+			delete(e.queues, owner)
+		} else {
+			e.queues[owner] = queue
+			owners = append(owners, owner)
+		}
+	}
+	clear(e.owners[len(owners):])
+	e.owners = owners
+	e.next = 0
+	for n, owner := range owners {
+		if owner == nextOwner {
+			e.next = n
+			break
+		}
+	}
+}
+
 func (e *Engine) OpenRun(owner Owner, revision int) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -150,7 +246,10 @@ func (e *Engine) OpenRun(owner Owner, revision int) error {
 	if owner.ContextID == "" || owner.RunID == "" || revision < 1 {
 		return fmt.Errorf("owner and positive revision are required")
 	}
-	old, ok := e.runs[owner]
+	old, ok, err := e.runState(owner)
+	if err != nil {
+		return err
+	}
 	for other, state := range e.runs {
 		if other.ContextID == owner.ContextID && other != owner && !state.Closed {
 			return fmt.Errorf("context already has an active run")
@@ -162,7 +261,11 @@ func (e *Engine) OpenRun(owner Owner, revision int) error {
 	if ok && revision == old.Revision {
 		return nil
 	}
-	state := RunState{Owner: owner, Revision: revision, Ack: old.Ack}
+	if !ok && len(e.runs) >= e.config.MaxActiveRuns {
+		return fmt.Errorf("active Run limit exhausted")
+	}
+	state := old
+	state.Owner, state.Revision = owner, revision
 	if err := e.save(record{Run: &state}); err != nil {
 		return err
 	}
@@ -174,6 +277,7 @@ func (e *Engine) OpenRun(owner Owner, revision int) error {
 			}
 		}
 	}
+	e.prune()
 	e.signal()
 	return nil
 }
@@ -192,11 +296,15 @@ func (e *Engine) Submit(task Task) (Status, error) {
 		return Status{}, e.fatal
 	}
 	key := taskKey(task.Owner, task.ID)
-	if old, ok := e.tasks[key]; ok {
+	old, found, err := e.lookup(task.Owner, task.ID)
+	if err != nil {
+		return Status{}, err
+	}
+	if found {
 		if !reflect.DeepEqual(old.Task, task) {
 			return Status{}, ErrConflict
 		}
-		return clone(old.Status), nil
+		return clone(old), nil
 	}
 	run, ok := e.runs[task.Owner]
 	if !ok || run.Closed || task.Revision != run.Revision {
@@ -211,9 +319,9 @@ func (e *Engine) Submit(task Task) (Status, error) {
 	count := 0
 	runCount := 0
 	for _, item := range e.tasks {
-		if !terminal(item.State) {
+		if !terminal(item.State) || item.State == "unknown" {
 			count++
-			if item.Task.Owner == task.Owner {
+			if item.Task.Owner == task.Owner && item.State != "unknown" {
 				runCount++
 			}
 		}
@@ -231,7 +339,10 @@ func (e *Engine) Submit(task Task) (Status, error) {
 	}
 	deps := map[string]bool{}
 	for _, id := range task.Dependencies {
-		dep, ok := e.tasks[taskKey(task.Owner, id)]
+		dep, ok, err := e.lookup(task.Owner, id)
+		if err != nil {
+			return Status{}, err
+		}
 		if !ok || id == task.ID || dep.Task.Revision != task.Revision || deps[id] {
 			return Status{}, fmt.Errorf("dependencies must be unique, previously submitted tasks in the same run and revision")
 		}
@@ -276,7 +387,14 @@ func (e *Engine) Cancel(owner Owner, id string) error {
 	}
 	key := taskKey(owner, id)
 	if e.tasks[key] == nil {
-		return fmt.Errorf("unknown task")
+		_, ok, err := e.lookup(owner, id)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("unknown task")
+		}
+		return nil
 	}
 	err := e.cancel(key)
 	e.signal()
@@ -306,17 +424,38 @@ func (e *Engine) cancel(key string) error {
 func (e *Engine) Status(owner Owner, id string) (Status, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	item := e.tasks[taskKey(owner, id)]
-	if item == nil {
+	item, ok, err := e.lookup(owner, id)
+	if err != nil {
+		return Status{}, err
+	}
+	if !ok {
 		return Status{}, fmt.Errorf("unknown task")
 	}
-	return clone(item.Status), nil
+	return clone(item), nil
 }
 
 func (e *Engine) Events(owner Owner, after uint64) []Completion {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	var result []Completion
+	if e.history != nil {
+		state, ok, err := e.runState(owner)
+		if err != nil {
+			e.storageFailure(err)
+			return nil
+		}
+		if !ok {
+			return nil
+		}
+		if after < state.Ack {
+			after = state.Ack
+		}
+		page, err := e.resultPageLocked(owner, PageOptions{After: after, Limit: 1000, MaxBytes: 4 << 20}, state.Closed)
+		if err != nil {
+			return nil
+		}
+		return page.Items
+	}
 	for _, event := range e.events {
 		if event.Task.Owner == owner && event.Sequence > after && event.Sequence > e.runs[owner].Ack {
 			result = append(result, clone(event))
@@ -343,7 +482,12 @@ func (e *Engine) Archive(owner Owner) ArchiveReceipt {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	receipt := ArchiveReceipt{Owner: owner, Custodian: "run"}
-	if e.runs[owner].Closed {
+	state, _, err := e.runState(owner)
+	if err != nil {
+		e.storageFailure(err)
+		return receipt
+	}
+	if state.Closed {
 		receipt.Custodian = "runtime_archive"
 	}
 	for _, item := range e.tasks {
@@ -351,36 +495,30 @@ func (e *Engine) Archive(owner Owner) ArchiveReceipt {
 			receipt.Pending++
 		}
 	}
-	for _, event := range e.events {
-		if event.Task.Owner == owner && event.Sequence > e.runs[owner].Ack {
-			receipt.Unacknowledged++
-		}
-	}
+	receipt.Unacknowledged = int(state.Facts - state.Consumed)
 	return receipt
 }
 
 func (e *Engine) ArchivedEvents(owner Owner, after uint64) []Completion {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	var result []Completion
-	if !e.runs[owner].Closed {
-		return result
+	// Legacy Go convenience method returns at most one page. The wire API and
+	// Python client expose the continuation cursor explicitly.
+	page, err := e.ArchivePage(owner, PageOptions{After: after})
+	if err != nil {
+		return nil
 	}
-	for _, event := range e.events {
-		if event.Task.Owner == owner && event.Sequence > after {
-			result = append(result, clone(event))
-		}
-	}
-	return result
+	return page.Items
 }
 
 func (e *Engine) Stats() Stats {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events)}
+	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events), Runs: len(e.runs), QueueOwners: len(e.owners)}
 	for _, item := range e.tasks {
 		if item.State == "queued" {
 			stats.Queued++
+		}
+		if item.State == "unknown" {
+			stats.Unknown++
 		}
 	}
 	for _, event := range e.events {
@@ -392,9 +530,9 @@ func (e *Engine) Stats() Stats {
 	goruntime.ReadMemStats(&mem)
 	stats.HeapBytes = mem.HeapAlloc
 	if e.journal != nil {
-		if info, err := e.journal.Stat(); err == nil {
-			stats.JournalBytes = info.Size()
-		}
+		stats.JournalBytes = e.journal.bytes
+		stats.Compactions = e.journal.compactions
+		stats.CachedTasks, stats.CachedEvents, stats.CachedRuns = len(e.journal.tasks), len(e.journal.events), len(e.journal.runs)
 	}
 	return stats
 }
@@ -424,10 +562,12 @@ func (e *Engine) Ack(owner Owner, sequence uint64) error {
 				return fmt.Errorf("ack must consume the next event belonging to this run")
 			}
 			state.Ack = sequence
+			state.Consumed++
 			if err := e.save(record{Run: &state}); err != nil {
 				return err
 			}
 			e.runs[owner] = state
+			e.prune()
 			return nil
 		}
 	}
@@ -443,7 +583,10 @@ func (e *Engine) CloseRun(owner Owner) error {
 	if e.fatal != nil {
 		return e.fatal
 	}
-	state, ok := e.runs[owner]
+	state, ok, err := e.runState(owner)
+	if err != nil {
+		return err
+	}
 	if !ok {
 		return fmt.Errorf("unknown run")
 	}
@@ -459,6 +602,7 @@ func (e *Engine) CloseRun(owner Owner) error {
 			}
 		}
 	}
+	e.prune()
 	e.signal()
 	return nil
 }
@@ -470,12 +614,22 @@ func (e *Engine) complete(key string, result Result) error {
 	status.Result = &result
 	status.Timing.FinishedNS = time.Now().UnixNano()
 	event := Completion{Sequence: e.sequence + 1, Task: item.Task, Result: result, Timing: status.Timing}
-	if err := e.save(record{Task: &status, Event: &event}); err != nil {
+	state, ok, err := e.runState(item.Task.Owner)
+	if err != nil {
+		return e.storageFailure(err)
+	}
+	if !ok {
+		return e.storageFailure(fmt.Errorf("task Run missing"))
+	}
+	state.Facts++
+	if err := e.save(record{Task: &status, Event: &event, Run: &state}); err != nil {
 		return err
 	}
 	item.Status = status
 	e.sequence = event.Sequence
 	e.events = append(e.events, event)
+	e.runs[state.Owner] = state
+	e.prune()
 	e.notify()
 	return nil
 }
@@ -499,7 +653,14 @@ func (e *Engine) available(task Task) bool {
 func (e *Engine) bind(task Task) (Task, error) {
 	task = clone(task)
 	for arg, binding := range task.Bindings {
-		result := e.tasks[taskKey(task.Owner, binding.TaskID)].Result
+		dep, ok, err := e.lookup(task.Owner, binding.TaskID)
+		if err != nil {
+			return task, err
+		}
+		if !ok || dep.Result == nil {
+			return task, fmt.Errorf("dependency result missing")
+		}
+		result := dep.Result
 		var value any
 		if !json.Valid([]byte(result.Output)) {
 			return task, fmt.Errorf("dependency output is not a complete JSON value")
@@ -543,7 +704,7 @@ func (e *Engine) dispatch() bool {
 		owner := e.owners[index]
 		pending := e.queues[owner][:0]
 		for _, key := range e.queues[owner] {
-			if e.tasks[key].State == "queued" {
+			if e.tasks[key] != nil && e.tasks[key].State == "queued" {
 				pending = append(pending, key)
 			}
 		}
@@ -555,7 +716,15 @@ func (e *Engine) dispatch() bool {
 			}
 			ready, failed := true, false
 			for _, id := range item.Task.Dependencies {
-				dep := e.tasks[taskKey(owner, id)]
+				dep, ok, err := e.lookup(owner, id)
+				if err != nil {
+					e.storageFailure(err)
+					return false
+				}
+				if !ok {
+					e.storageFailure(fmt.Errorf("dependency missing"))
+					return false
+				}
 				if terminal(dep.State) && dep.State != "completed" {
 					failed = true
 				}
@@ -594,6 +763,7 @@ func (e *Engine) dispatch() bool {
 			item.cancel = cancel
 			e.active++
 			e.next = index + 1
+			e.prune()
 			go e.execute(ctx, key, task)
 			return true
 		}
@@ -673,7 +843,7 @@ func (e *Engine) Close(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if e.journal != nil {
-		err := e.journal.Close()
+		err := e.journal.close()
 		e.journal = nil
 		if e.fatal == nil {
 			e.fatal = err

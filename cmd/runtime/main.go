@@ -41,6 +41,9 @@ type request struct {
 	Allowed  bool       `json:"allowed"`
 	Reason   string     `json:"reason"`
 	Collect  bool       `json:"collect"`
+	Cursor   string     `json:"cursor"`
+	Limit    int        `json:"limit"`
+	MaxBytes int        `json:"max_bytes"`
 }
 
 type approvals struct {
@@ -101,12 +104,15 @@ func serve() error {
 	concurrency := flag.Int("concurrency", 4, "maximum executing tasks")
 	capacity := flag.Int("capacity", 128, "maximum outstanding tasks")
 	perRunCapacity := flag.Int("per-run-capacity", 0, "per-run outstanding tasks and unacknowledged facts; 0 uses capacity/concurrency")
+	maxRuns := flag.Int("max-active-runs", 0, "resident open Run bound; 0 uses max(128, capacity)")
+	segmentBytes := flag.Int64("segment-bytes", 0, "WAL segment size before online compaction; 0 uses 8 MiB")
 	requireApproval := flag.Bool("require-approval", true, "ask the client to recheck admission before each execution")
 	flag.Parse()
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
 	gates := &approvals{waiting: map[uint64]chan string{}, out: out}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
 	config.PerRunCapacity = *perRunCapacity
+	config.MaxActiveRuns, config.SegmentBytes = *maxRuns, *segmentBytes
 	if *requireApproval {
 		config.BeforeExecute = gates.check
 	}
@@ -156,9 +162,20 @@ func serve() error {
 		case "status":
 			value, err = engine.Status(req.Owner, req.TaskID)
 		case "events":
-			value = engine.Events(req.Owner, req.After)
+			var page tool.ArchivePage
+			page, err = engine.EventPage(req.Owner, tool.PageOptions{After: req.After})
+			if err == nil && page.NextCursor != "" {
+				err = fmt.Errorf("result exceeds one page; use event_page")
+			}
+			if err == nil && len(page.Items) > 0 {
+				value = page.Items
+			}
 		case "archive_events":
-			value = engine.ArchivedEvents(req.Owner, req.After)
+			value, err = engine.ArchivePage(req.Owner, tool.PageOptions{Cursor: req.Cursor, After: req.After, Limit: req.Limit, MaxBytes: req.MaxBytes})
+		case "event_page":
+			value, err = engine.EventPage(req.Owner, tool.PageOptions{Cursor: req.Cursor, After: req.After, Limit: req.Limit, MaxBytes: req.MaxBytes})
+		case "compact":
+			err = engine.Compact()
 		case "stats":
 			if req.Collect {
 				goruntime.GC()

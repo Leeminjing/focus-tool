@@ -48,7 +48,7 @@ finally:
 
 ## 调度与依赖
 
-`runtime.New(Config)` 提供可直接使用的 Go 接口。Concurrency 限制实际执行数，Capacity 限制全局非终态任务；PerRunCapacity 限制各活动 Run 的“非终态任务＋未 ack 结果”，默认 Capacity／Concurrency。Python 参数名为 `per_run_capacity`，CLI 为 `-per-run-capacity`。一个停止消费的 Run 达到自身额度会收到 ErrRunFull，但其已完成结果不会占用其他 Run 的任务容量。全局执行资源仍共享，不提供正在执行任务的抢占。
+`runtime.New(Config)` 提供可直接使用的 Go 接口。Concurrency 限制实际执行数，Capacity 限制全局非终态任务与未解决的 unknown 隔离；PerRunCapacity 限制各活动 Run 的“非终态任务＋未 ack 结果”，默认 Capacity／Concurrency。Python 参数名为 `per_run_capacity`，CLI 为 `-per-run-capacity`。`max_active_runs`／`-max-active-runs` 限制活动 Run 数，默认 max(128, capacity)。一个停止消费的 Run 达到自身额度会收到 ErrRunFull，但其已完成结果不会占用其他 Run 的任务容量。unknown 保留全局额度直到明确解决，避免反复崩溃产生无限隔离。全局执行资源仍共享，不提供正在执行任务的抢占。
 
 按 Run 轮转选择任务，跳过依赖或资源阻塞的队首，允许同 Run 的独立任务推进。完整链路的对照和 1,024 任务持续提交实测见 [边界修复与性能报告](boundaries-and-performance.md)。
 
@@ -80,11 +80,15 @@ await adapter.submit(
 
 ack 只允许确认当前 Run 的下一个未消费事件，重复 ack 幂等，越序或跨归属 ack 被拒绝。收到事件、形成终态和已消费是不同事实。重连会重投未 ack 事件；消费者必须使用 sequence／job 身份对外部动作去重。服务退出前仍可能有尚未传输的已落盘事件，下次连接按水位恢复。
 
-关闭 Run 返回含 `custodian=runtime_archive`、pending_executions 和 unacknowledged_facts 的回执。剩余完成／取消事实继续写入同一 journal，保留原 owner、sequence 与 Ack，不伪造消费确认。它们退出活动事件泵，后续通过 `Run.archived_events()` 显式查询，包括关闭前已经 ack 的历史事实；原 Run 的 next_event 和 ack 不再有消费权限。关闭时 pending_executions 可大于零，之后到达的终态由 archive 保管。资源仍等实际退出才释放，unknown 的资源隔离也不会因归档解除。
+关闭 Run 返回含 `custodian=runtime_archive`、pending_executions 和 unacknowledged_facts 的回执。剩余完成／取消事实继续写入耐久记录，保留原 owner、sequence 与 Ack，不伪造消费确认。它们退出活动事件泵，后续通过 `Run.archive_page()` 或 `iter_archived_events()` 分页查询，包括关闭前已 ack 的历史事实；`archived_events()` 仅适用于单页归档，超出时明确要求分页。原 Run 的 next_event 和 ack 不再有消费权限。关闭时 pending_executions 可大于零，之后到达的终态由 archive 保管。资源仍等实际退出才释放，unknown 的资源隔离也不会因归档解除。
 
 journal 为 fsync 的 JSONL，每个终态及其完成事件写在同一个 frame。Windows 使用内核 LockFileEx、Unix 使用 flock，防止两个进程同时拥有 journal。重启时截断未完成的最后一帧，完整帧损坏则拒绝启动。运行中或取消中的任务恢复为 unknown，禁止自动重放；其读写资源继续隔离，避免未停止的旧任务与新任务冲突。已确认终态任务重试提交时返回原结果，不再执行副作用。
 
 queued 任务的恢复需要重新通过执行前检查。新 Python 适配器默认拒绝尚未重新登记到本地调用表的任务；恢复时先建立可信注册与准入策略，不能默认批准历史排队任务。
+
+活动结果和未完成状态受配额限制；已确认／关闭的历史在磁盘索引与有界近期 WAL 缓存中保留，按需查询。每条变更仍单独 fsync；段达到 `segment_bytes`／`-segment-bytes`（默认 8 MiB）后合并索引并压缩。旧 ID 和依赖结果不随压缩过期，unknown 不随归档解锁。游标绑定 owner 与查询上界，默认每页 100 条／2 MiB，最大 1000 条／4 MiB。详见 [存储协议及恢复边界](history-retention.md)。升级需先停止旧进程；备份须包含 journal、`.store` 和任何 `.sealed` 段。
+
+客户端只订阅活动 Run。关闭后迟到的帧被丢弃于连接缓冲层，事实仍由耐久归档保管；重新打开活动 Run 时使用 `event_page` 补取历史未确认结果，并与实时泵按序去重合并。历史终态的重提／reconcile 不保留多余工具授权注册。
 
 ## JSONL 方法
 
@@ -96,9 +100,11 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 | submit | task | 幂等登记任务；检查容量、执行器、依赖及资源 |
 | status | owner、task_id | 获取所属任务的执行状态 |
 | cancel | owner、task_id | 请求取消指定任务 |
-| events | owner、after | 查询该 Run 未 ack 的后续事件 |
-| archive_events | owner、after | 查询已关闭 Run 的完整历史事件，不改变消费水位 |
-| stats | collect（可选） | 排队／活动／未消费数、保留历史数、journal 大小与 Go 堆；collect=true 在采样前触发 GC |
+| events | owner、after | 单页小结果兼容接口，需继续分页时返回明确错误 |
+| event_page | owner、cursor 或 after、limit、max_bytes | 分页补取活动 Run 未 ack 的事件 |
+| archive_events | owner、cursor 或 after、limit、max_bytes | 返回 items／next_cursor／through，查询关闭 Run 历史，不改变 Ack |
+| compact | 无 | 在线合并索引、轮换 WAL 并删除冗余段，保留执行事实 |
+| stats | collect（可选） | 活动任务／结果／Run、隔离、近期 WAL 缓存、压缩次数、WAL 字节和 Go 堆；collect=true 在采样前触发 GC |
 | ack | owner、sequence | 顺序确认持久消费水位 |
 | authorize | token、allowed、reason | 回答执行前检查；过期 token 失效 |
 | close_run | owner | 关闭 Run、取消任务，返回向 runtime_archive 转交结果保管权的回执 |
@@ -109,6 +115,6 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 - 工具是可信本地代码，要求为不生成后代的叶子进程。通用 Shell、子进程树、沙箱隔离与生产权限系统尚未实现；不得宣称已提供这些能力。
 - Python 工具以 `module + function + kwargs` 执行，支持同步及 async 返回值；结果必须可编码为 JSON。工具 stdout 重定向至 stderr，避免污染协议；单个工具 stdout／stderr 各保留最多 1 MiB，超限形成失败事件。
 - 每个服务实例单独拥有 journal。stdio 连接可集中服务多个 Context；多独立客户端或跨机器分布式服务不在当前协议范围内。
-- journal 研究上限为 128 MiB，超过上限 fail closed，需归档后继续；未实现在线压缩、自动 unknown 清理或通用 exactly-once 副作用。
-- Go 仍保留历史任务和事件索引，持续负载中回收后的堆会随历史增长；每 Run 容量隔离没有解决历史索引的内存保留问题。当前不适合宣称无限时长运行，需进一步做分页索引或压缩研究。
+- 已去除 128 MiB 整体 journal 上限，使用流式回放和单帧 32 MiB 上限。在线压缩保留 canonical 磁盘事实；磁盘总量随事实增长，磁盘满或写入失败仍 fail closed，不自动清除 unknown 或提供通用 exactly-once 副作用。
+- 耐久模式的活动状态受配额限制，近期历史受 WAL 段大小限制；内存模式仍保留全部历史。单个事件超过 4 MiB 不能由当前分页接口返回，会明确报错，需要后续 blob／分块协议。有限实验不能证明无限时长或生产 Patrol 的稳定性。
 - 已穿过真实 Focus Run worker、权限／租约、PostgreSQL checkpoint／ledger／inbox 做三例小范围联调，见 [真实接入](../integration/focus/README.md)。决策为确定性本地代码；未部署生产 Focus Desktop 或验证 Patrol 重调度，不宣称跨数据库原子事务。

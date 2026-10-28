@@ -4,7 +4,7 @@
 
 **已实现原图的本地完整闭环**：多 Context／Run 共用有界调度器，分别执行 Python 工具和本地进程，结果按归属返回 Run，并支持提前重规划、依赖绑定、资源互斥、取消确认和耐久结果重投。保留 M1 的三个对照模式。Focus 适配接口在本仓库提供，未修改或部署 Focus 主仓。
 
-已补取消等待、提交接收不确定和 Run 容量隔离边界，并通过真实 Focus Run 小范围联调。最新性能测试经过新增共享 runtime＋Python 适配器＋fsync journal，见 [边界修复与完整链路性能](docs/boundaries-and-performance.md)；历史索引仍随任务累积，尚不能宣称长期内存稳定。
+已补取消等待、提交接收不确定和 Run 容量隔离边界，并通过真实 Focus Run 小范围联调。完整链路的历史性能测试见 [边界修复与完整链路性能](docs/boundaries-and-performance.md)。本轮增加按条数／字节分页、活动状态与磁盘历史分离、WAL 分段压缩及有界近期缓存，见 [历史保留策略与验收](docs/history-retention.md)。不将有限负载实验解释为生产 Patrol 的长期稳定性证明。
 
 ## 目标架构
 
@@ -33,6 +33,7 @@ python examples/demo.py
 ```powershell
 python benchmarks/full_runtime.py
 python benchmarks/full_runtime.py --negative-control --repeat 3 --out results/local/negative-control.json
+python benchmarks/retention.py --out results/local/retention.json
 ```
 
 真实 Focus 接入需要其现有 Python 环境、源码与本机缓存的 PostgreSQL Docker 镜像，复现方法见 [接入说明](integration/focus/README.md)。核心测试不要求安装这些额外依赖。
@@ -78,9 +79,11 @@ python -m unittest discover -s python/tests -v
 - [完整架构验证记录](docs/verification.md)：测试范围、结果、原始输出与验证限制。
 - [边界修复与完整链路性能](docs/boundaries-and-performance.md)：三项回归、最新对照、负对照和持续负载结果。
 - [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
+- [历史分页与有界状态](docs/history-retention.md)：保留策略、磁盘布局、压缩恢复、游标及万次完整链路实验。
+- [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
 - `runtime`：共享调度器、Python／进程执行器、资源与依赖、耐久事件和结果路由。
 - `cmd/runtime`：本地 stdio JSONL 服务，一个连接可承载多个 Context 的 Run。
 - `python/focus_tool`：Focus 调用适配层、执行前检查、按 Run 分发与消费结果。
 - `internal/runtime`、`cmd/lab`：保留的 M1 执行器与三个对照模式。
 
-执行器目前要求工具是可信的叶子进程，不提供通用 Shell 进程树治理。资源名称由调用方显式声明，权限和租约由实际 Focus 接入方的执行前回调复核。运行时崩溃时，未确认执行记为 `unknown`，禁止自动重放并保留冲突资源隔离；需要人工核查，未提供自动清理与重试。耐久 journal 的研究上限为 128 MiB，达到上限会停止执行；尚未实现在线压缩。详见 [运行边界](docs/runtime.md#运行边界)。
+执行器目前要求工具是可信的叶子进程，不提供通用 Shell 进程树治理。资源名称由调用方显式声明，权限和租约由实际 Focus 接入方的执行前回调复核。运行时崩溃时，未确认执行记为 `unknown`，禁止自动重放并保留冲突资源和任务额度；需要人工核查，未提供自动清理与重试。WAL 已支持在线分段压缩；磁盘身份与结果保留至今，不提供破坏性过期清理。内存模式没有历史有界承诺。详见 [运行边界](docs/runtime.md#运行边界)。

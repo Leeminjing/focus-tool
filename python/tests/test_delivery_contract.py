@@ -1,8 +1,10 @@
 """Deterministic protocol-boundary reproductions; no tool/model dependencies."""
 import asyncio
+import gc
 import json
 import sys
 import unittest
+import weakref
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -87,3 +89,70 @@ class DeliveryContracts(unittest.IsolatedAsyncioTestCase):
             {"id": "write", "name": "start_write", "args": {"value": 1}},
         ]})
         self.assertEqual(json.loads(replies[0]["content"])["state"], "rejected")
+
+    async def test_late_event_after_closed_handle_collection_cannot_recreate_mailbox(self):
+        client, process, run = await self.make_client()
+
+        async def closed(method, **fields):
+            self.assertEqual(method, "close_run")
+            return {"custodian": "runtime_archive"}
+
+        client.request = closed
+        process.emit(1)
+        await asyncio.sleep(0)
+        self.assertEqual(len(client._mailboxes), 1)
+        await run.close()
+        handle = weakref.ref(run)
+        del run
+        gc.collect()
+        self.assertIsNone(handle())
+        # A pump may already have snapshotted this event before close_run.
+        process.emit(2)
+        await asyncio.sleep(0)
+        self.assertEqual(len(client._mailboxes), 0, "late frame resurrected an abandoned mailbox")
+        self.assertEqual(len(client._subscriptions), 0)
+
+    async def test_historical_terminal_submit_retains_no_authorization_registration(self):
+        client, process, run = await self.make_client()
+        adapter = FocusToolAdapter(client, {"start_write": ToolDefinition("python", module="tools", function="write")}, workspace=Path.cwd())
+
+        async def historical_status(method, **fields):
+            self.assertEqual(method, "submit")
+            return {"task": fields["task"], "state": "completed", "result": {"state": "completed"}}
+
+        client.request = historical_status
+        receipt = await adapter.submit(run, parent_message_id="parent", call_id="old", name="start_write", args={})
+        self.assertEqual(json.loads(receipt["content"])["state"], "accepted")
+        # This reconciled identity produces no new event and therefore no Ack
+        # that could clean up an unnecessary execution registration later.
+        self.assertEqual(len(adapter._submitted), 0)
+        self.assertEqual(len(adapter._uncertain), 0)
+
+    async def test_reconcile_discards_terminal_registration_but_preserves_pending_authorization(self):
+        client, process, run = await self.make_client()
+        from focus_tool import TransportError
+        adapter = FocusToolAdapter(client, {"start_write": ToolDefinition("python", module="tools", function="write")}, workspace=Path.cwd())
+        accepted = {}
+        reconciled_state = "completed"
+
+        async def lost_receipt_then_query(method, **fields):
+            if method == "submit":
+                accepted[fields["task"]["id"]] = fields["task"]
+                raise TransportError("accepted before receipt was lost")
+            self.assertEqual(method, "status")
+            return {"task": accepted[fields["task_id"]], "state": reconciled_state}
+
+        client.request = lost_receipt_then_query
+        receipt = await adapter.submit(run, parent_message_id="parent", call_id="old", name="start_write", args={})
+        self.assertEqual(json.loads(receipt["content"])["state"], "acceptance_unknown")
+        self.assertEqual(len(adapter._submitted), 1)
+        status = await adapter.reconcile(run, "parent", "old")
+        self.assertEqual(status["state"], "completed")
+        self.assertEqual(len(adapter._submitted), 0)
+        self.assertEqual(len(adapter._uncertain), 0)
+
+        reconciled_state = "queued"
+        await adapter.submit(run, parent_message_id="parent", call_id="pending", name="start_write", args={})
+        await adapter.reconcile(run, "parent", "pending")
+        self.assertEqual(len(adapter._submitted), 1, "pending work still needs execution-time authorization")
+        self.assertEqual(len(adapter._uncertain), 0)

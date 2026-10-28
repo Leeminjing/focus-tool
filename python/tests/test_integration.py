@@ -41,6 +41,9 @@ def append_once():
     path = Path("counter.txt")
     path.write_text(path.read_text() + "x" if path.exists() else "x")
     return {"count": len(path.read_text())}
+
+def large_result():
+    return "x" * (512 * 1024)
 '''
 
 
@@ -75,7 +78,8 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         tools = {name: ToolDefinition("python", module="tools", function=function)
                  for name, function in {"start_check": "read_config", "start_repair": "repair_config",
                                         "start_echo": "echo", "start_increment": "increment",
-                                        "start_failure": "fail", "start_once": "append_once"}.items()}
+                                        "start_failure": "fail", "start_once": "append_once",
+                                        "start_large": "large_result"}.items()}
         tools["start_slow"] = ToolDefinition("process", command=(sys.executable, "-u", "-c",
             "import time; print('started', flush=True); time.sleep(60)"))
         tools["start_timeout"] = ToolDefinition("process", command=(sys.executable, "-c",
@@ -302,6 +306,37 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([fact["sequence"] for fact in facts], [event["sequence"]])
         with self.assertRaisesRegex(RuntimeError, "Run closed"):
             await run.next_event()
+
+    async def test_large_archive_pages_keep_the_shared_connection_usable(self):
+        client, adapter = await self.start(capacity=32)
+        run = await client.open_run("large", "archive")
+        sequences = []
+        for index in range(17):
+            await adapter.submit(run, parent_message_id="large", call_id=str(index), name="start_large", args={})
+            event = await self.event(run)
+            self.assertEqual(len(json.loads(event["result"]["output"])), 512 * 1024)
+            sequences.append(event["sequence"])
+            await run.ack(event)
+        await run.close()
+        page = await run.archive_page(limit=3, max_bytes=1200 * 1024)
+        self.assertEqual(len(page["items"]), 2)
+        self.assertLessEqual(len(json.dumps(page, separators=(",", ":")).encode()), 1200 * 1024)
+        with self.assertRaisesRegex(ValueError, "exceeds one page"):
+            await run.archived_events()
+        cursor = page["next_cursor"]
+        await client.request("compact")
+        await client.close()
+        restarted, new_adapter = await self.start(capacity=32)
+        # Closed Runs retain archive custody and are not reopened as live Runs.
+        from focus_tool import Run
+        archived = Run(restarted, run.owner, 1, subscribe=False)
+        resumed = [event async for event in archived.iter_archived_events(cursor=cursor, limit=3, max_bytes=1200 * 1024)]
+        self.assertEqual([event["sequence"] for event in page["items"] + resumed], sequences)
+        other = await restarted.open_run("other", "still-usable")
+        await new_adapter.submit(other, parent_message_id="m", call_id="x", name="start_echo", args={"value": 42})
+        event = await self.event(other)
+        self.assertEqual(json.loads(event["result"]["output"]), {"value": 42})
+        await other.ack(event)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ var (
 	ErrRunFull        = errors.New("run capacity exhausted")
 	ErrStorageUnknown = errors.New("journal write failed; acceptance may be unknown")
 	ErrConflict       = errors.New("task identity already has different parameters")
+	ErrPageTooSmall   = errors.New("page byte limit cannot hold the next event")
 )
 
 type Owner struct {
@@ -86,6 +87,28 @@ type Stats struct {
 	Events         int    `json:"retained_events"`
 	HeapBytes      uint64 `json:"heap_bytes"`
 	JournalBytes   int64  `json:"journal_bytes"`
+	Runs           int    `json:"resident_runs"`
+	QueueOwners    int    `json:"queue_owners"`
+	Unknown        int    `json:"unknown_fences"`
+	Compactions    uint64 `json:"compactions"`
+	CachedTasks    int    `json:"wal_cached_tasks"`
+	CachedEvents   int    `json:"wal_cached_events"`
+	CachedRuns     int    `json:"wal_cached_runs"`
+}
+
+// ArchivePage is a bounded snapshot of a closed Run's facts. NextCursor is
+// scoped to its owner and high-water sequence, and survives compaction/restart.
+type ArchivePage struct {
+	Items      []Completion `json:"items"`
+	NextCursor string       `json:"next_cursor,omitempty"`
+	Through    uint64       `json:"through"`
+}
+
+type PageOptions struct {
+	Cursor   string
+	After    uint64
+	Limit    int
+	MaxBytes int
 }
 
 type Executor interface {
@@ -99,6 +122,8 @@ type Config struct {
 	Concurrency    int
 	Capacity       int    // Global nonterminal task bound, independent of result backlogs.
 	PerRunCapacity int    // Nonterminal tasks + unacked facts per active Run; 0 uses Capacity/Concurrency.
+	MaxActiveRuns  int    // Bounds resident Run state; 0 uses max(128, Capacity).
+	SegmentBytes   int64  // Rotate and compact the fsynced WAL; 0 uses 8 MiB.
 	Journal        string // Empty means memory only. One runtime must own a journal file.
 	Executors      map[string]Executor
 	BeforeExecute  func(context.Context, Task) error
@@ -109,6 +134,8 @@ type RunState struct {
 	Revision int    `json:"revision"`
 	Ack      uint64 `json:"ack"`
 	Closed   bool   `json:"closed"`
+	Facts    uint64 `json:"facts,omitempty"`
+	Consumed uint64 `json:"consumed,omitempty"`
 }
 
 type Status struct {

@@ -17,6 +17,8 @@
 
 实际结果：`allowed`、`permission_revoked`、`lease_released` 三例通过。原始记录见 [联调报告](../../results/focus-integration-2026-10-27.json)。
 
+2026-10-28 在同一固定 Focus 源码和隔离数据库条件下，对分页／压缩版 runtime 再次通过三例，见 [本轮记录](../../results/focus-retention-integration-2026-10-28.json)。这不扩大下述 Patrol／生产覆盖范围。
+
 | 用例 | 实际验证 |
 |---|---|
 | allowed | Focus Run 提交异步工具，真实 Go／Python 执行器写入独立临时文件；等待中的 Focus graph node 被完成事件唤醒；写入 typed checkpoint、确认 inbox receipt 后才 ack 运行时结果 |

@@ -19,6 +19,13 @@ class _Mailbox:
         self.ready = asyncio.Event()
 
     def put(self, event):
+        for index, item in enumerate(self.items):
+            if item["sequence"] == event["sequence"]:
+                return
+            if item["sequence"] > event["sequence"]:
+                self.items.insert(index, event)
+                self.ready.set()
+                return
         self.items.append(event)
         self.ready.set()
 
@@ -38,7 +45,9 @@ class RuntimeClient:
         self._serial = 0
         self._pending = {}
         self._mailboxes = defaultdict(_Mailbox)
-        self._closed_runs = set()
+        # Positive subscriptions avoid a permanent set of closed owner IDs.
+        # Late pre-close pump snapshots cannot recreate abandoned mailboxes.
+        self._subscriptions = set()
         self.on_ack = None
         self.on_run_closed = None
         self._closed = asyncio.Event()
@@ -48,9 +57,11 @@ class RuntimeClient:
         self._stderr_reader = asyncio.create_task(self._read_stderr())
 
     @classmethod
-    async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0, cwd=None, authorize=None):
+    async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0,
+                    max_active_runs=0, segment_bytes=0, cwd=None, authorize=None):
         argv = [*command, "-journal", str(journal), "-concurrency", str(concurrency),
-                "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity), "-require-approval=true"]
+                "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity),
+                "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes), "-require-approval=true"]
         try:
             process = await asyncio.create_subprocess_exec(*argv, cwd=cwd, stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, limit=8 << 20)
@@ -97,7 +108,7 @@ class RuntimeClient:
                     event = frame["event"]
                     owner = event["task"]["owner"]
                     key = owner["context_id"], owner["run_id"]
-                    if key not in self._closed_runs:
+                    if key in self._subscriptions:
                         self._mailboxes[key].put(event)
                 elif frame["type"] == "authorize":
                     task = asyncio.create_task(self._answer_authorization(frame))
@@ -132,14 +143,36 @@ class RuntimeClient:
 
     async def open_run(self, context_id, run_id, revision=1):
         owner = {"context_id": context_id, "run_id": run_id}
-        await self.request("open_run", owner=owner, revision=revision)
-        return Run(self, owner, revision)
+        key = context_id, run_id
+        existed = key in self._subscriptions
+        run = Run(self, owner, revision)
+        try:
+            await self.request("open_run", owner=owner, revision=revision)
+            # Startup can produce events before a local subscription exists.
+            # Reconcile a bounded snapshot; mailbox insertion merges pump and
+            # replay in sequence order without duplicate buffering.
+            cursor = ""
+            while True:
+                page = await self.request("event_page", owner=owner, cursor=cursor, max_bytes=4 << 20)
+                for event in page["items"]:
+                    self._mailboxes[key].put(event)
+                cursor = page.get("next_cursor", "")
+                if not cursor:
+                    break
+            return run
+        except BaseException:
+            if not existed:
+                self._subscriptions.discard(key)
+                self._mailboxes.pop(key, None)
+            raise
 
     async def _next(self, owner):
         key = owner["context_id"], owner["run_id"]
+        if key not in self._subscriptions:
+            raise RemoteRejected("Run closed; remaining results belong to runtime_archive")
         mailbox = self._mailboxes[key]
         while True:
-            if key in self._closed_runs:
+            if key not in self._subscriptions:
                 raise RemoteRejected("Run closed; remaining results belong to runtime_archive")
             if mailbox.items:
                 # No suspension between dequeue and handing the event to Run.
@@ -158,7 +191,7 @@ class RuntimeClient:
 
     def _restore(self, owner, event):
         key = owner["context_id"], owner["run_id"]
-        if key not in self._closed_runs:
+        if key in self._subscriptions:
             mailbox = self._mailboxes[key]
             mailbox.items.appendleft(event)
             mailbox.ready.set()
@@ -189,8 +222,10 @@ class RuntimeClient:
 class Run:
     """The result consumer in the original architecture; ack follows checkpointing."""
 
-    def __init__(self, client, owner, revision):
+    def __init__(self, client, owner, revision, *, subscribe=True):
         self.client, self.owner, self.revision = client, dict(owner), revision
+        if subscribe:
+            client._subscriptions.add((owner["context_id"], owner["run_id"]))
         self._last_ack = 0
         self._delivered = set()
 
@@ -235,7 +270,7 @@ class Run:
     async def close(self):
         receipt = await self.client.request("close_run", owner=self.owner)
         key = self.owner["context_id"], self.owner["run_id"]
-        self.client._closed_runs.add(key)
+        self.client._subscriptions.discard(key)
         mailbox = self.client._mailboxes.pop(key, None)
         if mailbox is not None:
             mailbox.ready.set()
@@ -244,5 +279,24 @@ class Run:
             self.client.on_run_closed(self.owner)
         return receipt
 
+    async def archive_page(self, *, cursor="", after=0, limit=100, max_bytes=2 << 20):
+        """One bounded snapshot page. Persist next_cursor to resume after restart."""
+        return await self.client.request("archive_events", owner=self.owner, cursor=cursor,
+                                         after=after, limit=limit, max_bytes=max_bytes)
+
+    async def iter_archived_events(self, *, cursor="", after=0, limit=100, max_bytes=2 << 20):
+        while True:
+            page = await self.archive_page(cursor=cursor, after=after, limit=limit, max_bytes=max_bytes)
+            for event in page["items"]:
+                yield event
+            cursor = page.get("next_cursor", "")
+            if not cursor:
+                return
+            after = 0
+
     async def archived_events(self, after=0):
-        return await self.client.request("archive_events", owner=self.owner, after=after)
+        """Compatibility for a small archive; large histories require paging."""
+        page = await self.archive_page(after=after)
+        if page.get("next_cursor"):
+            raise ValueError("archive exceeds one page; use archive_page or iter_archived_events")
+        return page["items"]

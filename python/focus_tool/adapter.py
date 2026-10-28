@@ -93,7 +93,7 @@ class FocusToolAdapter:
             raise ValueError("tool call identity has conflicting arguments")
         self._submitted[key] = copy.deepcopy(task)
         try:
-            await self.client.request("submit", task=task)
+            status = await self.client.request("submit", task=task)
         except RemoteRejected as error:
             if key in self._uncertain:
                 return self._unknown_receipt(task, call_id, name, error)
@@ -109,6 +109,10 @@ class FocusToolAdapter:
             self._uncertain.add(key)
             raise
         self._uncertain.discard(key)
+        if status and status.get("state") in {"completed", "failed", "cancelled", "skipped", "unknown"}:
+            # A historical retry will not emit a fresh event/Ack. It cannot
+            # require execution authorization again, so retain no registration.
+            self._submitted.pop(key, None)
         return {"role": "tool", "tool_call_id": call_id, "name": name,
                 "content": json.dumps({"job_id": task["id"], "state": "accepted"})}
 
@@ -122,6 +126,8 @@ class FocusToolAdapter:
         identity = self.job_id(parent_message_id, call_id)
         status = await run.status(identity)
         self._uncertain.discard((run.owner["context_id"], run.owner["run_id"], identity))
+        if status["state"] in {"completed", "failed", "cancelled", "skipped", "unknown"}:
+            self._submitted.pop((run.owner["context_id"], run.owner["run_id"], identity), None)
         return status
 
     async def submit_tool_calls(self, run, message):
