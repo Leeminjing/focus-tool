@@ -12,14 +12,13 @@ from langchain_core.messages import ToolMessage
 from sqlalchemy import select
 from backend.app.desktop.patrol.agent_loop.models import AgentLoop, LoopDelegationGrant
 from backend.app.desktop.workspaces.coordination import WorkspaceLeaseManager, WorkspaceLeaseRequest
+from backend.app.desktop.workspaces.coordination.leases import WorkspaceLeaseConflict
 from focus.security.context import AuthorizationIdentity, ExecutionProfile, RoutingIdentity, derive_security_context
 from focus.security.effects import declare_effect, structured_fs, ResolvedFsEffect
 from focus.security.middleware import AccessPolicyMiddleware
 from focus.security.policy import AccessMode
 from focus_tool import FocusToolAdapter, RuntimeClient, Run, ResultBridge, ToolDefinition, RemoteRejected
-
-from patrol_store import identity
-
+from focus_tool.custody import cancel_jobs
 
 class ToolService:
     def __init__(self, store, binary, root):
@@ -31,6 +30,10 @@ class ToolService:
         self._heartbeat = None
         self._heartbeat_error = None
         self._pumps = []
+        self.on_published = None
+        self.before_notify = None  # Actual post-commit crash boundary in tests.
+        self.cleanup_report = []
+        self._publication_spans = {}
 
     async def start(self):
         self.client = await RuntimeClient.start([str(self.binary)], journal=self.root / "runtime.jsonl",
@@ -68,7 +71,12 @@ class ToolService:
         self.leases[context] = grant
         self.runs[context] = run
         self.bridges[context] = ResultBridge(run,
-            lambda event, c=context: self.store.publish(event, self.epochs[c]), self.store.confirmed)
+            lambda event, c=context: self.persist(c, event), self.store.confirmed)
+
+    async def persist(self, context, event):
+        started = time.time_ns()
+        await self.store.publish(event, self.epochs[context])
+        self._publication_spans[context] = (event["sequence"], started, time.time_ns())
 
     async def renew(self):
         try:
@@ -84,11 +92,22 @@ class ToolService:
         except Exception as error:
             self._heartbeat_error = error
             # The old service cannot keep dispatching after it loses custody.
+            await self.cancel_custody()
+
+    async def cancel_custody(self):
+        try:
             await self.client.pause_dispatch()
-            for context, run in self.runs.items():
-                for action in await self.store.actions(context, pending=False):
-                    if action["kind"] == "submit":
-                        await run.cancel(self.adapter.job_id(action["id"], action["operation"]))
+        except Exception as error:
+            self.cleanup_report.append({"state": "pause_failed", "error": str(error)})
+        for context, run in self.runs.items():
+            try:
+                actions = await self.store.actions(context, pending=False)
+            except Exception as error:
+                self.cleanup_report.append({"owner": dict(run.owner), "state": "enumeration_failed", "error": str(error)})
+                continue
+            jobs = [self.adapter.job_id(action["id"], action["operation"])
+                for action in actions if action["kind"] == "submit"]
+            self.cleanup_report.extend(await cancel_jobs(run, jobs))
 
     async def admit(self, task):
         if self._heartbeat_error:
@@ -190,10 +209,30 @@ class ToolService:
             bridge.run.requeue_fact(event)
         while True:
             event = await bridge.deliver_next()
-            self.published.append({"context_id": context, "sequence": event["sequence"], "published_ns": time.time_ns()})
+            sequence, started, committed = self._publication_spans.pop(context)
+            assert sequence == event["sequence"]
+            publication = {"context_id": context, "sequence": sequence,
+                "persist_started_ns": started, "published_ns": committed}
+            self.published.append(publication)
+            if self.before_notify:
+                await self.before_notify(event)
+            if self.on_published:
+                publication["notified_ns"] = time.time_ns()
+                try:
+                    self.on_published(self.owners[context]["loop_id"])
+                except Exception as error:
+                    publication["notification_error"] = str(error)  # Durable scan repairs a lost hint.
 
     def start_pumps(self):
+        if self._pumps:
+            raise RuntimeError("result pumps already started")
         self._pumps = [asyncio.create_task(self.pump(context)) for context in self.owners]
+
+    async def stop_pumps(self):
+        pumps, self._pumps = self._pumps, []
+        for task in pumps:
+            task.cancel()
+        await asyncio.gather(*pumps, return_exceptions=True)
 
     async def ack_ready(self, context):
         for event in await self.store.facts(context, unacked=True):
@@ -203,9 +242,7 @@ class ToolService:
             await self.store.acknowledged(event, self.epochs[context])
 
     async def close(self):
-        for task in self._pumps:
-            task.cancel()
-        await asyncio.gather(*self._pumps, return_exceptions=True)
+        await self.stop_pumps()
         if self._heartbeat:
             self._heartbeat.cancel()
             await asyncio.gather(self._heartbeat, return_exceptions=True)
@@ -235,5 +272,11 @@ class ToolService:
                 continue
             async with self.store.sessions.begin() as session:
                 await self.store.fence(session, context, self.epochs[context])
-                await self.lease_manager.release(lease.lease_id, lease.fencing_token)
+                try:
+                    await self.lease_manager.release(lease.lease_id, lease.fencing_token)
+                except WorkspaceLeaseConflict as error:
+                    # Custody may already have been revoked. Never treat an old
+                    # token as permission to release a replacement owner's lease.
+                    self.cleanup_report.append({"owner": dict(self.runs[context].owner),
+                        "state": "lease_release_skipped", "error": str(error)})
         return stats

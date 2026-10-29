@@ -20,13 +20,16 @@ def message_id(event):
     return content_hash([*identity(event), event["task"]["id"], event["task"]["revision"]])[:32]
 
 
+def typed_inbox_ids(items, context):
+    return {ref["message_id"] for item in items
+        if item["kind"] == "agent_collaboration" and item["origin"] == "collaborator"
+        for ref in item["source_refs"] if ref.get("kind") == "inbox"
+        and ref.get("task_id") == context and ref.get("recipient") == "main:" + context}
+
+
 def typed_source(checkpoint, event):
     context = event["task"]["owner"]["context_id"]
-    return any(ref.get("kind") == "inbox" and ref.get("message_id") == message_id(event)
-        and ref.get("task_id") == context and ref.get("recipient") == "main:" + context
-        for item in checkpoint.checkpoint["channel_values"].get("execution_items", [])
-        if item["kind"] == "agent_collaboration" and item["origin"] == "collaborator"
-        for ref in item["source_refs"])
+    return message_id(event) in typed_inbox_ids(checkpoint.checkpoint["channel_values"].get("execution_items", []), context)
 
 
 class BridgeStore:
@@ -46,6 +49,17 @@ class BridgeStore:
             await session.execute(text("""CREATE TABLE IF NOT EXISTS research_owners (
                 context_id text PRIMARY KEY, payload jsonb NOT NULL,
                 epoch bigint NOT NULL DEFAULT 0)"""))
+            await session.execute(text("""CREATE TABLE IF NOT EXISTS research_wakes (
+                context_id text PRIMARY KEY REFERENCES research_owners(context_id),
+                generation bigint NOT NULL, handled bigint NOT NULL DEFAULT 0)"""))
+            await session.execute(text("""CREATE INDEX IF NOT EXISTS research_bridge_pending
+                ON research_bridge(context_id,sequence) WHERE receipt IS NULL"""))
+            # Upgrade/recovery: notifications or an old in-memory wake list are
+            # never the source of truth. Reconstruct from durable inbox facts.
+            await session.execute(text("""INSERT INTO research_wakes(context_id,generation,handled)
+                SELECT context_id,max(sequence),coalesce(max(sequence) FILTER(WHERE receipt IS NOT NULL),0)
+                FROM research_bridge GROUP BY context_id
+                ON CONFLICT(context_id) DO UPDATE SET generation=greatest(research_wakes.generation,excluded.generation)"""))
 
     async def save_owner(self, owner):
         async with self.sessions.begin() as session:
@@ -80,6 +94,18 @@ class BridgeStore:
                 {"c": context, "r": logical, "s": sequence, "e": json.dumps(event), "m": mid})
             await session.execute(insert(AgentMessage).values(message_id=mid, task_id=context,
                 from_agent="tool-runtime", to_agent="main:" + context, kind="message", content=json.dumps(event)).on_conflict_do_nothing())
+            await session.execute(text("""INSERT INTO research_wakes(context_id,generation) VALUES (:c,:s)
+                ON CONFLICT(context_id) DO UPDATE SET generation=greatest(research_wakes.generation,excluded.generation)"""),
+                {"c": context, "s": sequence})
+
+    async def pending_wakes(self):
+        async with self.sessions() as session:
+            return [dict(row) for row in (await session.execute(text("""SELECT w.context_id,
+                o.payload->>'loop_id' AS loop_id,w.generation FROM research_wakes w
+                JOIN research_owners o USING(context_id)
+                WHERE EXISTS(SELECT 1 FROM research_bridge b
+                    WHERE b.context_id=w.context_id AND b.receipt IS NULL)
+                ORDER BY w.generation,w.context_id"""))).mappings()]
 
     async def facts(self, context, *, unconsumed=False, unacked=False):
         where = " AND receipt IS NULL" if unconsumed else ""
@@ -117,6 +143,10 @@ class BridgeStore:
                     {"c": key[0], "r": key[1], "s": key[2], "receipt": json.dumps(receipt)})
             for action in actions:
                 await self._action(session, context, action)
+            await session.execute(text("""UPDATE research_wakes SET handled=greatest(handled,:s)
+                WHERE context_id=:c AND NOT EXISTS(SELECT 1 FROM research_bridge
+                    WHERE context_id=:c AND sequence<=:s AND receipt IS NULL)"""),
+                {"c": context, "s": max(event["sequence"] for event in events)})
 
     async def _action(self, session, context, action):
         old = (await session.execute(text("SELECT payload FROM research_actions WHERE action_id=:id"), {"id": action["id"]})).scalar_one_or_none()

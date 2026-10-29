@@ -2,6 +2,21 @@
 
 本目录使用本机已有的 Focus Python 环境和真实源码，执行一个小范围 Run 链路。核心运行时仍只依赖 Go／Python 标准库；本联调额外复用 Focus 已有的 LangGraph、SQLAlchemy、psycopg 等依赖，以及本机已缓存的 `postgres:17-alpine` Docker 镜像。脚本不会下载镜像、修改 Focus 源码、读写桌面正式数据库或调用模型 API。
 
+## 自动 Patrol 唤醒（2026-10-29）
+
+当前应用闭环入口是 `run_automatic.py`，调用 `PatrolResultService`，结果落盘后自动唤醒真实 Patrol／Kernel／RunPool。脚本只启动场景、控制本地叶子工具 fixture 并断言，不调用后继 `harness.schedule()`，A 的关键场景不等待 B 的结果。单宿主、本地确定性 provider，Focus 源码仍固定 `340bf2b8`。
+
+```powershell
+& 'C:\Users\brubing\.focus\runtime\venv\Scripts\python.exe' `
+  integration/focus/run_automatic.py `
+  --focus-root 'C:\Users\brubing\Desktop\ag-project\focus' `
+  --out results/local/automatic-patrol.json
+```
+
+场景覆盖独立 Context、连续结果合并、消费中迟到结果、inbox 快照之后到达的结果、同一真实 Loop 两个 Context、实际 RunPool 容量等待、失权取消清理、inbox 提交而通知尚未发出时硬杀／无通知重启。shared-Loop fixture 在首个决策前建立真实 grant／membership，两个激活使用真实 read lease，独立服务 job workspace 的 write grant／lease 保持分离；不声称这个研究 service-principal 已等同生产 Context 文件权限系统。
+
+`test_wake_controls.py` 另用真实适配类配 stub 控制依赖，验证部分 drain 的取消所有权、瞬时失败重试、关闭错误聚合、诊断回调隔离、失败 Run 的结算及页内归属；它不连接数据库，和真实 PostgreSQL 用例分开报告。全部可通过 `scripts/verify.py --focus-root <checkout> --focus-python <existing-python> --focus-patrol --focus-automatic` 顺序复现。合同见 [自动唤醒](../../docs/automatic-patrol.md)，证据见 [结果](../../docs/automatic-patrol-results.md)。下述旧七例保留用于恢复边界回归，其中手动调度只属于原场景控制。
+
 ## Patrol 跨激活接入（2026-10-29）
 
 新增 `run_patrol.py`，固定同一 Focus `340bf2b8`，使用真实 `LoopObservationService`、`PortfolioPatrol`、`LoopKernel`、`ContextRunPool`、`LoopCoordinator`、`LoopWaveDispatcher`、`RunOwnershipPolicy`、`LoopRunWorkspaceBinder`、`LoopRunExecutionBoundary` 和 `execute_prepared_run`／`run_agent`。本地确定性 agent／task-progress provider 与 Desktop launch port 是研究适配；没有模型调用，也未启动 Desktop HTTP 或完整 supervisor。

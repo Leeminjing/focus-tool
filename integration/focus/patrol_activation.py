@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import uuid
+import time
 
 from langchain.agents.middleware.types import ModelRequest
 from langchain.tools import tool
@@ -50,7 +51,7 @@ from focus.security.effects import declare_effect, NO_LOCAL_EFFECT
 from focus.security.policy import AccessMode
 from focus.security.middleware import AccessPolicyMiddleware
 
-from patrol_store import identity
+from patrol_store import identity, message_id, typed_inbox_ids
 
 
 class State(TypedDict, total=False):
@@ -91,11 +92,24 @@ class PatrolHarness:
         self.pending = []
         self.defer_actions = False
         self.wait_started = True
+        self.trace = None
+        self.initial_operations = {}
+        self.before_exit = None  # Local fixture can hold a live activation.
+        self.after_inbox_snapshot = None
+        self.context_modes = {}
 
-    def security(self, owner, run_id):
+    def emit(self, kind, **fields):
+        if self.trace:
+            try:
+                self.trace({"kind": kind, "time_ns": time.time_ns(), **fields})
+            except Exception:
+                pass
+
+    def security(self, owner, run_id, equipment=None):
         root = Path(owner["activation_root"])
+        equipment = equipment or {"permissions": ["read", "write"], "access_mode": "workspace-write"}
         return derive_security_context(ExecutionProfile(
-            AuthorizationIdentity(root, (root,), ("read", "write"), AccessMode.WORKSPACE_WRITE, "main:" + owner["context_id"]),
+            AuthorizationIdentity(root, (root,), tuple(equipment["permissions"]), AccessMode(equipment["access_mode"]), "main:" + owner["context_id"]),
             RoutingIdentity(owner["thread_id"], owner["workspace_id"], "main:" + owner["context_id"],
                 owner["context_id"], "", run_id))).to_runtime_context()
 
@@ -112,18 +126,21 @@ class PatrolHarness:
             await self.revisions.switch_current(session, ref, old.ref if old else None)
         return ref
 
-    async def bootstrap(self, label):
+    async def bootstrap(self, label, *, join=None):
         context, workspace, initial, job_workspace, job_slot, service_run = (uuid.uuid4().hex for _ in range(6))
-        activation_root, job_root = self.root / label / "activation", self.root / label / "jobs"
-        activation_root.mkdir(parents=True)
-        job_root.mkdir()
+        activation_root = Path(join["activation_root"]) if join else self.root / label / "activation"
+        workspace = join["workspace_id"] if join else workspace
+        job_root = self.root / label / "jobs"
+        activation_root.mkdir(parents=True, exist_ok=True)
+        job_root.mkdir(parents=True)
         owner = {"label": label, "context_id": context, "workspace_id": workspace,
             "thread_id": "patrol-" + context, "logical_run": uuid.uuid4().hex, "service_run": service_run,
             "job_workspace": job_workspace, "job_slot": job_slot, "job_root": str(job_root),
             "activation_root": str(activation_root), "revision": 1}
         async with self.sessions.begin() as session:
-            session.add_all([DesktopWorkspace(workspace_id=workspace, path=str(activation_root), display_name=label),
-                DesktopWorkspace(workspace_id=job_workspace, path=str(job_root), display_name=label + " tool service")])
+            if not join:
+                session.add(DesktopWorkspace(workspace_id=workspace, path=str(activation_root), display_name=label))
+            session.add(DesktopWorkspace(workspace_id=job_workspace, path=str(job_root), display_name=label + " tool service"))
             await session.flush()
             session.add(DesktopThread(task_id=context, thread_id=owner["thread_id"], workspace_id=workspace, title=label))
             await session.flush()
@@ -158,13 +175,35 @@ class PatrolHarness:
         async with self.sessions.begin() as session:
             row = await session.get(DesktopRun, initial)
             row.status, row.settled_at, row.context_revision_id = "success", datetime.now(UTC), ref.revision_id
-        snapshot = await AgentLoopService(self.sessions).start(LoopCreateRequest(loop_id=uuid.uuid4().hex,
+        if join:
+            # Trusted scenario bootstrap, before any Patrol decision. Actual
+            # Kernel/admission/dispatch still validate this persisted scope.
+            from backend.app.desktop.contexts.curation.models import CurationLane
+            from backend.app.desktop.patrol.agent_loop.models import LoopContextMembership, LoopDelegationGrant
+            from backend.app.desktop.patrol.agent_loop.rounds.lifecycle import current_frontier_hash
+            async with self.sessions.begin() as session:
+                loop = await session.get(AgentLoop, join["loop_id"], with_for_update=True)
+                grant = await session.scalar(select(LoopDelegationGrant).where(LoopDelegationGrant.loop_id == loop.loop_id,
+                    LoopDelegationGrant.status == "active"))
+                grant.context_scope = [*grant.context_scope, context]
+                lane_id = uuid.uuid4().hex
+                session.add(CurationLane(lane_id=lane_id, program_id=loop.program_id, managed_context_id=context,
+                    purpose=label, normalized_purpose=label, lane_policy={"workspace_mode": "read_only"}))
+                await session.flush()
+                session.add(LoopContextMembership(membership_id=uuid.uuid4().hex, loop_id=loop.loop_id,
+                    context_id=context, lane_id=lane_id, role="side", status="active"))
+                await session.flush()
+                round_row = await session.get(LoopRound, loop.current_round_id)
+                round_row.frontier_hash = await current_frontier_hash(session, loop.loop_id)
+            owner["loop_id"] = join["loop_id"]
+        else:
+            snapshot = await AgentLoopService(self.sessions).start(LoopCreateRequest(loop_id=uuid.uuid4().hex,
             workspace_id=workspace, initial_context_id=context, initial_run_id=initial, holder_id="tool-patrol",
             goal="Verify local tool facts across activations", task_contract="Use owned tool results only",
             acceptance_criteria=({"criterion_id": "artifact", "text": "Verified local artifact"},),
             capabilities=("continue_context", "request_completion"), context_scope=(context,), permission_scope=("read", "write"),
-            equipment={"access_mode": "workspace-write"}))
-        owner["loop_id"] = snapshot["loop_id"]
+                equipment={"access_mode": "workspace-write"}))
+            owner["loop_id"] = snapshot["loop_id"]
         await self.store.save_owner(owner)
         await self.service.attach(owner)
         return owner
@@ -208,15 +247,24 @@ class PatrolHarness:
 
         async def prepare(state, runtime):
             updates = await middleware.abefore_model(state, runtime)
-            return {**updates, "facts": await self.store.facts(owner["context_id"], unconsumed=True),
+            items = synchronize_items(state.get("execution_items"), [*state["messages"], *updates.get("messages", [])])
+            if self.after_inbox_snapshot:
+                await self.after_inbox_snapshot(owner, state, updates)
+            represented = typed_inbox_ids(items, owner["context_id"])
+            # The native inbox has a page limit and its snapshot precedes this
+            # query. Later/unpaged facts stay pending for another activation.
+            facts = [event for event in await self.store.facts(owner["context_id"], unconsumed=True)
+                if message_id(event) in represented]
+            return {**updates, "facts": facts,
                 "decisions": [], "actions": [],
-                "execution_items": synchronize_items(state.get("execution_items"), [*state["messages"], *updates.get("messages", [])])}
+                "execution_items": items}
 
         async def decide(state, runtime):
             actions, decisions = [], []
             existing = await self.store.actions(owner["context_id"], pending=False)
             if not existing:
                 operations = ("check", "scan") if owner["label"] == "A" else (("independent",) if owner["label"] == "B" else ("recovery",))
+                operations = self.initial_operations.get(owner["context_id"], operations)
                 actions = [self.action(owner, operation) for operation in operations]
             for event in state["facts"]:
                 operation = event["task"]["python"]["args"]["operation"]
@@ -252,6 +300,8 @@ class PatrolHarness:
                         path = Path(owner["job_root"]) / (action["operation"] + ".attempts")
                         while not path.exists():
                             await asyncio.sleep(0.01)
+            if self.before_exit:
+                await self.before_exit(owner, state)
             return updates
 
         builder = StateGraph(State, context_schema=dict)
@@ -264,6 +314,14 @@ class PatrolHarness:
         return builder.compile(checkpointer=self.saver)
 
     async def schedule(self, owner):
+        async with asyncio.timeout(30):
+            while not await self.schedule_many([owner]):
+                await asyncio.sleep(0.05)
+
+    async def schedule_many(self, owners):
+        owner = owners[0]
+        if any(item["loop_id"] != owner["loop_id"] for item in owners):
+            raise ValueError("one Patrol decision must belong to one Loop")
         # Publish actual task-memory work with a deterministic evidence-preserving
         # provider, then freeze the real bounded observation for PortfolioPatrol.
         for _ in range(6):
@@ -284,21 +342,26 @@ class PatrolHarness:
             async with self.sessions() as session:
                 loop = await session.get(AgentLoop, owner["loop_id"])
                 round_row = await session.get(LoopRound, loop.current_round_id)
+            if round_row.status == "settled" and loop.health == "progress_waiting":
+                return False
             raise AssertionError({"round_status": round_row.status, "barrier": round_row.barrier,
                 "health": loop.health, "waiting": loop.waiting_reason, "round_id": round_row.round_id})
 
         async def model(obs):
             async with self.sessions() as session:
-                ref = await self.revisions.current(session, owner["context_id"])
+                refs = {item["context_id"]: await self.revisions.current(session, item["context_id"]) for item in owners}
             return PatrolDecisionIntent(decision_id=uuid.uuid4().hex, idempotency_key="tool-patrol:" + obs.round_id,
                 loop_id=obs.loop_id, loop_revision=obs.loop_revision, round_id=obs.round_id, holder_id="tool-patrol",
                 grant_id=obs.grant["grant_id"], grant_revision=obs.authority_revision, goal_revision=obs.goal_revision,
                 fencing_token=int(claim.fencing_token), observed_frontier_hash=obs.observed_frontier_hash,
                 observed_workspace_revision=obs.workspace["revision"], observed_projection_sequence=obs.projection_sequence,
                 base_entity_revisions=obs.base_entity_revisions, rationale="Durable owned tool facts require a successor activation.",
-                actions=({"action": "continue_context", "context_id": owner["context_id"],
-                    "context_revision_id": ref.ref.revision_id, "message": "Submit or consume owned background work."},),
-                context_permissions=({"context_id": owner["context_id"], "access_mode": "workspace-write"},))
+                actions=tuple({"action": "continue_context", "context_id": item["context_id"],
+                    "context_revision_id": refs[item["context_id"]].ref.revision_id,
+                    "message": "Submit or consume owned background work."} for item in owners),
+                context_permissions=tuple({"context_id": item["context_id"],
+                    "access_mode": self.context_modes.get(item["context_id"], "workspace-write") if item["context_id"] in refs else None}
+                    for item in obs.portfolio_frontier))
 
         try:
             proposal = await PortfolioPatrol(self.sessions, model).decide(observation, "tool-patrol", fencing_token=int(claim.fencing_token))
@@ -306,6 +369,7 @@ class PatrolHarness:
             assert result.status == "committed", result
         finally:
             await self.coordinator.release(claim)
+        return True
 
     async def drain(self):
         previous = len(self.activations)
@@ -340,7 +404,7 @@ class PatrolHarness:
             from backend.app.desktop.patrol.agent_loop.execution.execution_ownership import RunOwnershipPolicy
             await RunOwnershipPolicy().admit(session, row)
             session.add(row)
-        context = self.security(owner, run_id)
+        context = self.security(owner, run_id, equipment)
         context.update({"run_id": run_id, "checkpoint_id": ref.ref.checkpoint_id})
         body = SimpleNamespace(context=context, input={"messages": [message]}, stream_mode=["values"], resume=None)
         _, lease = await LoopRunWorkspaceBinder(self.sessions).bind(run_id=run_id, loop_id=directive.loop_id,
@@ -354,6 +418,7 @@ class PatrolHarness:
         resources = RunExecutionResources(bridge=MemoryStreamBridge(), run_manager=self.manager,
             checkpointer=self.saver, store=None, app_config=self.config)
         record = await LoopRunExecutionBoundary(self.sessions).start(assembly, resources, execute_prepared_run)
+        self.emit("activation_started", loop_id=directive.loop_id, context_id=owner["context_id"], run_id=run_id)
         self.records.append(record)
         self.pending.append((owner, directive, record, graph, lease))
         return run_id
@@ -362,18 +427,20 @@ class PatrolHarness:
         run_id = record.run_id
         try:
             await record.task
-            assert record.status.value == "success", record.error
             await record.loop_activity_task
             final = await graph.aget_state({"configurable": {"thread_id": owner["thread_id"]}})
-            next_ref = await self.publish_revision(owner["context_id"], final.config, final.values, ContextRevisionOriginKind.RUN_SETTLED, run_id)
+            status = record.status.value
+            next_ref = await self.publish_revision(owner["context_id"], final.config, final.values,
+                ContextRevisionOriginKind.RUN_SETTLED, run_id) if status == "success" else None
             async with self.sessions.begin() as session:
                 row = await session.get(DesktopRun, run_id)
-                row.status, row.settled_at = "success", datetime.now(UTC)
+                row.status, row.settled_at, row.error = status, datetime.now(UTC), record.error
                 await session.flush()
                 await self.coordinator.handle_run_settled(SimpleNamespace(event_type="RunSettled", run_id=run_id,
-                    event_id=uuid.uuid4().hex, payload={"context_revision": next_ref.model_dump(mode="json")}), session)
+                    event_id=uuid.uuid4().hex, payload={"context_revision": next_ref.model_dump(mode="json")} if next_ref else {}), session)
             self.activations.append({"context_id": owner["context_id"], "run_id": run_id, "checkpoint": final.config,
-                "logical_run": owner["logical_run"], "exited_ns": __import__("time").time_ns(),
+                "status": status, "error": record.error,
+                "logical_run": owner["logical_run"], "exited_ns": time.time_ns(),
                 "activation_lease_id": lease.lease_id, "activation_fencing_token": lease.fencing_token,
                 "decisions": final.values.get("decisions", [])})
         finally:
@@ -382,6 +449,8 @@ class PatrolHarness:
                 heartbeat.cancel()
                 await asyncio.gather(heartbeat, return_exceptions=True)
             await WorkspaceLeaseManager(self.sessions).release(lease.lease_id, lease.fencing_token)
+        self.emit("activation_exited", loop_id=directive.loop_id, context_id=owner["context_id"], run_id=run_id)
+        return {"context_id": owner["context_id"], "status": status, "error": record.error}
 
     async def close(self):
         await self.pool.close()

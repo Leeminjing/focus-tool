@@ -102,6 +102,8 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 
 跨 Focus 激活的服务使用 `Run.next_fact()`，保留旧 revision 的取消等事实并逐一持久分类；`next_event()` 保留已有的版本过滤行为。`ResultBridge.deliver_next()` 把事实交给幂等耐久 sink，失败或取消则放回原邮箱队首。`ack_consumed()` 要求宿主确认耐久决策 checkpoint 和消费回执。实际接入例将消费回执与稳定身份的后续动作 outbox 同事务写入，原生 inbox receipt 单独不足以 ack。逻辑 runtime Run 由长期服务持有，单次 Focus 激活退出不调用其 `close()`。见 [Patrol 跨激活合同](patrol-bridge.md)。
 
+自动唤醒使用标准库 `PatrolWakeService` 与 Focus `PatrolResultService` 端口。Context 的 inbox／pending 同事务保存，结果泵提交后通知所属 Loop；通知丢失时启动／周期扫描仍会从耐久未消费记录继续。Loop 合并、多 Context 和容量等待由真实 Kernel／RunPool 承担准入，准备前重新检查 pending，不重复提交已有决策。每次消费只选入本次原生 typed inbox 快照所代表的事实，后到或未分页到的事实保留；激活退出后自动继续，无须测试脚本等齐其他 Context。接口、关闭责任和计时边界见 [自动唤醒合同](automatic-patrol.md)。
+
 活动结果和未完成状态受配额限制；已确认／关闭的历史在磁盘索引与有界近期 WAL 缓存中保留，按需查询。每条变更仍单独 fsync；段达到 `segment_bytes`／`-segment-bytes`（默认 8 MiB）后封存，单个后台任务构建耐久索引并发布水位，再回收旧段。`compaction_mode="background"`／`-compaction-mode background` 为默认，`sync` 保留原同步对照。最多一个封存段加一个活动段；构建跟不上时写入在 Engine 锁外背压。查询合并及关闭超时的所有权规则见 [后台压缩合同](background-compaction.md)。旧 ID 和依赖结果不随压缩过期，unknown 不随归档解锁。游标绑定 owner 与查询上界，默认每页 100 条／2 MiB，最大 1000 条／4 MiB。详见 [存储协议及恢复边界](history-retention.md)。升级需先停止旧进程；备份须包含 journal、`.store` 和任何 `.sealed` 段。
 
 客户端只订阅活动 Run。关闭后迟到的帧被丢弃于连接缓冲层，事实仍由耐久归档保管；重新打开活动 Run 时使用 `event_page` 补取历史未确认结果，并与实时泵按序去重合并。历史终态的重提／reconcile 不保留多余工具授权注册。

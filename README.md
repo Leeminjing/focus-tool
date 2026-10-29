@@ -40,6 +40,8 @@ python benchmarks/retention.py --out results/local/retention.json
 
 Patrol 跨激活接入使用独立结果服务持有逻辑任务、权限和租约：原 Focus Run 退出后工具继续执行，结果持久进入 Context inbox，经真实 Patrol／Kernel／ContextRunPool 派发后继 Run；决策 checkpoint、消费回执与动作 outbox 持久化后再 ack。包含两个 Context 提前纠偏、两个硬杀恢复点和 queued 派发恢复握手。合同见 [跨激活桥接](docs/patrol-bridge.md)，实测和生产边界见 [验收记录](docs/patrol-results.md)。
 
+后继激活现在由 [持久结果驱动的唤醒服务](docs/automatic-patrol.md) 自动安排：A 的快结果不等待 B；忙碌、同 Loop 合并与全局容量等待保留 pending；丢通知和重启可自动续接。标准库驱动位于 `python/focus_tool/wake.py`，真实 Focus 服务端口位于 `integration/focus/patrol_driver.py`；新场景入口为 `run_automatic.py`，原手动脚本保留作恢复边界回归。
+
 短工具阶段测量须单独运行，避免与测试或其他实验并行：
 
 ```powershell
@@ -112,6 +114,7 @@ python -m unittest discover -s python/tests -v
 - [边界修复与完整链路性能](docs/boundaries-and-performance.md)：三项回归、最新对照、负对照和持续负载结果。
 - [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
 - [Patrol 跨激活结果桥接](docs/patrol-bridge.md)／[验收记录](docs/patrol-results.md)：独立任务生命周期、持久 inbox／决策消费、原身份恢复和真实重启测试。
+- [自动 Patrol 唤醒](docs/automatic-patrol.md)：持久 pending、Loop 合并、忙碌／容量等待、无通知恢复与服务生命周期；[验证记录](docs/automatic-patrol-results.md)。
 - [历史分页与有界状态](docs/history-retention.md)：保留策略、磁盘布局、压缩恢复、游标及万次完整链路实验。
 - [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
 - [短工具测量合同](docs/short-tools-method.md)：持久确认、准入、进程／函数、交付／消费、压缩和锁等待的精确边界。

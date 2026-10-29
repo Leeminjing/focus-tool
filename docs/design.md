@@ -74,12 +74,13 @@ Runner 只限制同时执行的直接子进程数，未提供跨 Context 公平�
 | M2（本地实现完成） | 显式任务队列、A→B 依赖绑定、独立 C、读写资源约束 | Go 与 Python 集成测试覆盖依赖、绑定、失败传播、资源隔离和取消确认 |
 | M3（机制完成，性能研究继续） | 多 Context 集中接收、路由和公平调度 | 已验证每 Run 配额及 archive 收尾，保留完整链路 barrier／event 对照；新增按 Run 周期创建／关闭的万次负载入口，实际记录见历史保留报告，生产长期稳定性仍待验证 |
 | M4（研究实现完成） | 耐久事件、执行身份、ack、水位及恢复 | 已验证重复、越序 ack 拒绝、真实崩溃、日志锁与半帧恢复；新增分页磁盘历史、近期段缓存和在线压缩，unknown 人工恢复工具仍待做 |
-| M5（小范围真实联调通过，生产部署待做） | Focus Python 适配与受控工具集 | 实际 Run worker、权限、租约、PostgreSQL checkpoint／ledger／inbox 通过允许执行、权限撤销与租约释放三例；Desktop HTTP、Patrol 重调度及生产迁移未覆盖 |
+| M5（真实组件原型通过，生产部署待做） | Focus Python 适配与受控工具集 | 实际 Run worker、权限、租约、PostgreSQL checkpoint／ledger／inbox，以及真实 Patrol／Kernel／RunPool 跨激活和恢复用例；Desktop HTTP／完整 supervisor 与生产迁移未覆盖 |
+| M6（单宿主原型） | 持久结果驱动的自动 Patrol 唤醒 | Context pending、Loop 合并、激活／容量等待、无通知重启续接；明确端口连接真实调度组件，见 [自动唤醒合同](automatic-patrol.md) |
 | M6 | 本地模型与真实搜索/测试任务 | 计入额外推理时间与次数；比较正确完成率和任务总耗时 |
 
 进程复用已按短工具测量实现为可选有界池；只读缓存、跨 Context 合并及模型流中的推测派发仍待研究。应加入“早结果不改变方向”的负对照和“过度唤醒反而变慢”的场景，防止只选能获益的任务。
 
-2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)，以及 [可信 Python worker 复用](python-pool-results.md)。本轮的 [有界后台压缩与耐久发布](compaction-results.md) 已覆盖默认段多轮负载、背压、七个真实崩溃边界及 138 次主对照压缩；长时间持有 Engine 锁明显缩短，但典型 I/O 延迟和总吞吐仍有取舍。下一项为尚未实现的 Patrol 跨 Run inbox 桥接、checkpoint／ack 重启点和 queued 恢复握手。不能将有限本地负载验收解释为生产 Patrol 已接通或长期性能已解决。
+2026-10-27 的必须完成扫描负对照未观察到明显收益，持续负载也确认旧历史索引保留使 Go 堆增长，见 [当时的性能报告](boundaries-and-performance.md)。随后实现 [分页、历史有界化与压缩](history-retention.md)、[可信 Python worker 复用](python-pool-results.md) 和 [有界后台压缩与耐久发布](compaction-results.md)。Patrol 跨 Run inbox 桥接、checkpoint／ack 重启点和 queued 暂停／可信恢复握手已经在 [跨激活阶段](patrol-results.md) 完成。本阶段进一步实现 [自动唤醒服务](automatic-patrol.md)，旧手动调度场景继续作为恢复边界回归保留。生产服务身份、完整 supervisor、桥接历史保留及多宿主恢复仍待接入，有限本地负载不证明生产长期性能已解决。
 
 ## Focus 接入所需设计
 

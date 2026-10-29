@@ -1,5 +1,7 @@
 # Patrol 跨激活接入验收
 
+本页保留 `4e15d3b` 阶段的手动场景证据；其后新增的持久结果驱动自动唤醒、合并和无通知恢复见 [自动唤醒验证](automatic-patrol-results.md)。不要把本页单次 5503.69 ms 与后续轨迹直接解释成优化比例。
+
 2026-10-29，在只读 Focus 检出 [`340bf2b8607dfb536d9376d400a02b122a4542bb`](https://github.com/Leeminjing/Focus/commit/340bf2b8607dfb536d9376d400a02b122a4542bb)、本机已有 Focus Python 环境及独立缓存 PostgreSQL 容器上运行。没有模型 API、生产数据库或 Focus 源码修改。核心仍使用 Go／Python 标准库；额外依赖仅属于可选 Focus 联调。
 
 ## 实际通过的闭环

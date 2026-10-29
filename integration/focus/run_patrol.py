@@ -274,10 +274,10 @@ def kill_daemon(pid):
         os.kill(pid, signal.SIGKILL)
 
 
-def recovery(args, case):
+def recovery(args, case, *, script=None):
     work = args.work / case
     work.mkdir()
-    base = [sys.executable, "-u", str(Path(__file__).resolve()), "--focus-root", str(args.focus_root),
+    base = [sys.executable, "-u", str(script or Path(__file__).resolve()), "--focus-root", str(args.focus_root),
         "--work", str(work), "--binary", str(args.binary), "--case", case]
     log = work / "prepare.log"
     marker = work / "boundary.json"
