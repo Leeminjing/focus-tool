@@ -61,7 +61,7 @@ class RuntimeClient:
     @classmethod
     async def start(cls, command, *, journal, concurrency=4, capacity=128, per_run_capacity=0,
                     max_active_runs=0, segment_bytes=0, cwd=None, authorize=None, trace=None, trace_path=None,
-                    python_workers=0, python_worker_tasks=256, compaction_mode="background"):
+                    python_workers=0, python_worker_tasks=256, compaction_mode="background", start_paused=False):
         argv = [*command, "-journal", str(journal), "-concurrency", str(concurrency),
                 "-capacity", str(capacity), "-per-run-capacity", str(per_run_capacity),
                 "-max-active-runs", str(max_active_runs), "-segment-bytes", str(segment_bytes),
@@ -69,6 +69,7 @@ class RuntimeClient:
         if trace_path is not None:
             argv.extend(["-trace", str(trace_path)])
         argv.extend(["-python-workers", str(python_workers), "-python-worker-tasks", str(python_worker_tasks)])
+        argv.append("-start-paused=" + str(bool(start_paused)).lower())
         try:
             process = await asyncio.create_subprocess_exec(*argv, cwd=cwd, stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, limit=8 << 20)
@@ -239,6 +240,14 @@ class RuntimeClient:
             if hasattr(self.process, "close_pipes"):
                 self.process.close_pipes()
 
+    async def pause_dispatch(self):
+        await self.request("pause_dispatch")
+
+    async def resume_dispatch(self, registered):
+        if self.authorize is None:
+            raise RuntimeError("restore the execution authority hook before resuming dispatch")
+        await self.request("resume_dispatch", registered=list(registered))
+
     async def __aenter__(self):
         return self
 
@@ -262,22 +271,34 @@ class Run:
 
     async def next_event(self):
         while True:
+            event = await self.next_fact()
+            if event["task"]["revision"] != self.revision:
+                # Rejection is determined by the already-durable plan revision.
+                try:
+                    await self.ack(event)
+                except BaseException:
+                    self.requeue_fact(event)
+                    raise
+                continue
+            return event
+
+    async def next_fact(self):
+        """Unfiltered execution fact for a durable bridge; never implicitly ack."""
+        while True:
             event = await self.client._next(self.owner)
             if event["task"]["owner"] != self.owner:
                 raise RuntimeError("cross-run result delivery")
             sequence = event["sequence"]
             if sequence <= self._last_ack or sequence in self._delivered:
                 continue
-            if event["task"]["revision"] != self.revision:
-                # Rejection is determined by the already-durable plan revision.
-                try:
-                    await self.ack(event)
-                except BaseException:
-                    self.client._restore(self.owner, event)
-                    raise
-                continue
             self._delivered.add(sequence)
             return event
+
+    def requeue_fact(self, event):
+        if event["task"]["owner"] != self.owner:
+            raise ValueError("cannot restore another owner's fact")
+        self._delivered.discard(event["sequence"])
+        self.client._restore(self.owner, event)
 
     async def ack(self, event):
         if event["task"]["owner"] != self.owner:

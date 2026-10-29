@@ -98,6 +98,10 @@ journal 为 fsync 的 JSONL，每个终态及其完成事件写在同一个 fram
 
 queued 任务的恢复需要重新通过执行前检查。新 Python 适配器默认拒绝尚未重新登记到本地调用表的任务；恢复时先建立可信注册与准入策略，不能默认批准历史排队任务。
 
+恢复出 queued 任务的 Engine 会在启动调度循环前自动暂停派发；新服务也可显式使用 `RuntimeClient.start(..., start_paused=True)`／`-start-paused=true`。依次打开原 owner、按持久意图用原 parent/call ID 恢复 `FocusToolAdapter` 的可信登记和当前准入回调，最后调用 `adapter.resume_dispatch()`。服务核对所有 queued owner/job 均在清单中；缺项不会恢复。清单只完成恢复握手，每次实际执行仍调用 authority／lease hook。`pause_dispatch` 仅停止新的派发，不撤销已在执行的任务。
+
+跨 Focus 激活的服务使用 `Run.next_fact()`，保留旧 revision 的取消等事实并逐一持久分类；`next_event()` 保留已有的版本过滤行为。`ResultBridge.deliver_next()` 把事实交给幂等耐久 sink，失败或取消则放回原邮箱队首。`ack_consumed()` 要求宿主确认耐久决策 checkpoint 和消费回执。实际接入例将消费回执与稳定身份的后续动作 outbox 同事务写入，原生 inbox receipt 单独不足以 ack。逻辑 runtime Run 由长期服务持有，单次 Focus 激活退出不调用其 `close()`。见 [Patrol 跨激活合同](patrol-bridge.md)。
+
 活动结果和未完成状态受配额限制；已确认／关闭的历史在磁盘索引与有界近期 WAL 缓存中保留，按需查询。每条变更仍单独 fsync；段达到 `segment_bytes`／`-segment-bytes`（默认 8 MiB）后封存，单个后台任务构建耐久索引并发布水位，再回收旧段。`compaction_mode="background"`／`-compaction-mode background` 为默认，`sync` 保留原同步对照。最多一个封存段加一个活动段；构建跟不上时写入在 Engine 锁外背压。查询合并及关闭超时的所有权规则见 [后台压缩合同](background-compaction.md)。旧 ID 和依赖结果不随压缩过期，unknown 不随归档解锁。游标绑定 owner 与查询上界，默认每页 100 条／2 MiB，最大 1000 条／4 MiB。详见 [存储协议及恢复边界](history-retention.md)。升级需先停止旧进程；备份须包含 journal、`.store` 和任何 `.sealed` 段。
 
 客户端只订阅活动 Run。关闭后迟到的帧被丢弃于连接缓冲层，事实仍由耐久归档保管；重新打开活动 Run 时使用 `event_page` 补取历史未确认结果，并与实时泵按序去重合并。历史终态的重提／reconcile 不保留多余工具授权注册。
@@ -112,6 +116,8 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 | submit | task | 幂等登记任务；检查容量、执行器、依赖及资源 |
 | status | owner、task_id | 获取所属任务的执行状态 |
 | cancel | owner、task_id | 请求取消指定任务 |
+| pause_dispatch | 无 | 暂停新的执行派发，保留运行中的任务和耐久事实 |
+| resume_dispatch | registered: [{owner, task_id}] | 完整 queued 可信登记清单恢复后继续派发；执行时仍复核权限／租约 |
 | events | owner、after | 单页小结果兼容接口，需继续分页时返回明确错误 |
 | event_page | owner、cursor 或 after、limit、max_bytes | 分页补取活动 Run 未 ack 的事件 |
 | archive_events | owner、cursor 或 after、limit、max_bytes | 返回 items／next_cursor／through，查询关闭 Run 历史，不改变 Ack |
@@ -129,4 +135,4 @@ queued 任务的恢复需要重新通过执行前检查。新 Python 适配器�
 - 每个服务实例单独拥有 journal。stdio 连接可集中服务多个 Context；多独立客户端或跨机器分布式服务不在当前协议范围内。
 - 已去除 128 MiB 整体 journal 上限，使用流式回放和单帧 32 MiB 上限。在线压缩保留 canonical 磁盘事实；磁盘总量随事实增长，磁盘满或写入失败仍 fail closed，不自动清除 unknown 或提供通用 exactly-once 副作用。
 - 耐久模式的活动状态受配额限制，近期历史受 WAL 段大小限制；内存模式仍保留全部历史。单个事件超过 4 MiB 不能由当前分页接口返回，会明确报错，需要后续 blob／分块协议。有限实验不能证明无限时长或生产 Patrol 的稳定性。
-- 已穿过真实 Focus Run worker、权限／租约、PostgreSQL checkpoint／ledger／inbox 做三例小范围联调，见 [真实接入](../integration/focus/README.md)。决策为确定性本地代码；未部署生产 Focus Desktop 或验证 Patrol 重调度，不宣称跨数据库原子事务。
+- 已穿过真实 Focus Run worker、权限／租约、PostgreSQL checkpoint／ledger／inbox，并新增真实 PortfolioPatrol、Kernel、ContextRunPool 和 coordinator／dispatcher 的跨激活联调，见 [真实接入](../integration/focus/README.md)。决策与 Desktop launch port 为本地研究适配，未修改／部署 Focus 主仓、未覆盖完整生产 supervisor 或多宿主故障转移，不宣称跨数据库原子事务。

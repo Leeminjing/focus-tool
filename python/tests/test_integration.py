@@ -72,10 +72,10 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.directory.cleanup()
 
     async def start(self, *, journal="events.jsonl", hook=None, concurrency=2, capacity=16, trace_path=None, trace=None,
-                    python_workers=0, allow_reuse=False):
+                    python_workers=0, allow_reuse=False, start_paused=False):
         client = await RuntimeClient.start([str(self.binary)], journal=self.workspace / journal,
                                            concurrency=concurrency, capacity=capacity, trace_path=trace_path, trace=trace,
-                                           python_workers=python_workers)
+                                           python_workers=python_workers, start_paused=start_paused)
         self.clients.append(client)
         tools = {name: ToolDefinition("python", module="tools", function=function, reuse=allow_reuse)
                  for name, function in {"start_check": "read_config", "start_repair": "repair_config",
@@ -192,6 +192,39 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         await new_adapter.submit(new_run, parent_message_id="m", call_id="once", name="start_once", args={})
         self.assertEqual((self.workspace / "counter.txt").read_text(), "x")
         self.assertEqual(await restarted.request("events", owner=new_run.owner), None)
+
+    async def test_killed_queued_daemon_restores_registration_before_current_authority(self):
+        for revoked in (False, True):
+            with self.subTest(revoked=revoked):
+                journal = "queued-" + str(revoked) + ".jsonl"
+                client, adapter = await self.start(journal=journal, start_paused=True)
+                run = await client.open_run("A", "recover")
+                await adapter.submit(run, parent_message_id="stable", call_id="once", name="start_once", args={})
+                self.assertEqual((await run.status(adapter.job_id("stable", "once")))["state"], "queued")
+                client.process.kill()
+                await client.process.wait()
+                await client.close()
+
+                checks = []
+                async def current_authority(task):
+                    checks.append(task["id"])
+                    return not revoked
+                recovered, trusted = await self.start(journal=journal, hook=current_authority)
+                owner = await recovered.open_run("A", "recover")
+                self.assertTrue((await recovered.request("stats"))["dispatch_paused"])
+                with self.assertRaisesRegex(RuntimeError, "not been restored"):
+                    await trusted.resume_dispatch()
+                self.assertEqual(checks, [])
+                await trusted.submit(owner, parent_message_id="stable", call_id="once", name="start_once", args={})
+                await trusted.resume_dispatch()
+                event = await self.event(owner)
+                self.assertEqual(event["result"]["state"], "failed" if revoked else "completed")
+                self.assertEqual(len(checks), 1)
+                if revoked:
+                    self.assertNotIn("pid", event["result"])
+                await owner.ack(event)
+                await recovered.close()
+        self.assertEqual((self.workspace / "counter.txt").read_text(), "x")
 
     async def test_tool_exception_is_returned_to_owner_as_failure(self):
         client, adapter = await self.start()

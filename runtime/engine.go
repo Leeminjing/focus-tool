@@ -43,6 +43,7 @@ type Engine struct {
 	history         *history
 	fatal           error
 	closing         bool
+	paused          bool
 	wake            chan struct{}
 	changed         chan struct{}
 	finished        chan finished
@@ -129,6 +130,13 @@ func New(config Config) (*Engine, error) {
 		}
 	}
 	e.ready = true
+	e.paused = config.StartPaused
+	for _, item := range e.tasks {
+		if item.State == "queued" {
+			e.paused = true
+			break
+		}
+	}
 	go e.loop()
 	e.signal()
 	return e, nil
@@ -530,7 +538,7 @@ func (e *Engine) ArchivedEvents(owner Owner, after uint64) []Completion {
 
 func (e *Engine) Stats() Stats {
 	defer e.lock("stats", Owner{}, "")()
-	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events), Runs: len(e.runs), QueueOwners: len(e.owners)}
+	stats := Stats{Running: e.active, Tasks: len(e.tasks), Events: len(e.events), Runs: len(e.runs), QueueOwners: len(e.owners), DispatchPaused: e.paused}
 	if observer, ok := e.config.Executors["python"].(interface{ PoolStats() *PoolStats }); ok {
 		stats.PythonPool = observer.PoolStats()
 	}
@@ -855,7 +863,7 @@ func (e *Engine) loop() {
 	defer close(e.done)
 	for {
 		unlock := e.lock("dispatch", Owner{}, "")
-		for !e.closing && e.fatal == nil && e.active < e.config.Concurrency && e.dispatch() {
+		for !e.closing && !e.paused && e.fatal == nil && e.active < e.config.Concurrency && e.dispatch() {
 		}
 		stop := (e.closing || e.fatal != nil) && e.active == 0
 		unlock()

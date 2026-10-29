@@ -29,21 +29,22 @@ func (w *writer) send(value any) error {
 }
 
 type request struct {
-	ID       uint64     `json:"id"`
-	Method   string     `json:"method"`
-	Owner    tool.Owner `json:"owner"`
-	Revision int        `json:"revision"`
-	Task     tool.Task  `json:"task"`
-	TaskID   string     `json:"task_id"`
-	After    uint64     `json:"after"`
-	Sequence uint64     `json:"sequence"`
-	Token    uint64     `json:"token"`
-	Allowed  bool       `json:"allowed"`
-	Reason   string     `json:"reason"`
-	Collect  bool       `json:"collect"`
-	Cursor   string     `json:"cursor"`
-	Limit    int        `json:"limit"`
-	MaxBytes int        `json:"max_bytes"`
+	ID         uint64              `json:"id"`
+	Method     string              `json:"method"`
+	Owner      tool.Owner          `json:"owner"`
+	Revision   int                 `json:"revision"`
+	Task       tool.Task           `json:"task"`
+	TaskID     string              `json:"task_id"`
+	After      uint64              `json:"after"`
+	Sequence   uint64              `json:"sequence"`
+	Token      uint64              `json:"token"`
+	Allowed    bool                `json:"allowed"`
+	Reason     string              `json:"reason"`
+	Collect    bool                `json:"collect"`
+	Cursor     string              `json:"cursor"`
+	Limit      int                 `json:"limit"`
+	MaxBytes   int                 `json:"max_bytes"`
+	Registered []tool.TaskIdentity `json:"registered"`
 }
 
 type approvals struct {
@@ -107,6 +108,7 @@ func (a *approvals) answer(req request) error {
 func serve() (serveError error) {
 	journal := flag.String("journal", ".focus-tool/runtime.jsonl", "durable local JSONL journal; empty disables persistence")
 	concurrency := flag.Int("concurrency", 4, "maximum executing tasks")
+	startPaused := flag.Bool("start-paused", false, "hold dispatch until trusted registrations and authority are restored")
 	capacity := flag.Int("capacity", 128, "maximum outstanding tasks")
 	perRunCapacity := flag.Int("per-run-capacity", 0, "per-run outstanding tasks and unacknowledged facts; 0 uses capacity/concurrency")
 	maxRuns := flag.Int("max-active-runs", 0, "resident open Run bound; 0 uses max(128, capacity)")
@@ -148,6 +150,7 @@ func serve() (serveError error) {
 	config.MaxActiveRuns, config.SegmentBytes = *maxRuns, *segmentBytes
 	config.CompactionMode = *compactionMode
 	config.Trace = trace
+	config.StartPaused = *startPaused
 	if *requireApproval {
 		config.BeforeExecute = gates.check
 	}
@@ -194,6 +197,10 @@ func serve() (serveError error) {
 		var value any
 		var err error
 		switch req.Method {
+		case "pause_dispatch":
+			err = engine.PauseDispatch()
+		case "resume_dispatch":
+			err = engine.ResumeDispatch(req.Registered)
 		case "open_run":
 			err = engine.OpenRun(req.Owner, req.Revision)
 		case "submit":

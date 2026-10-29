@@ -52,7 +52,7 @@ type engineLockSpan struct {
 
 func mutationOperation(operation string) bool {
 	switch operation {
-	case "open_run", "submit", "cancel", "ack", "close_run", "dispatch", "completion", "compact", "close", "shutdown":
+	case "open_run", "submit", "cancel", "ack", "close_run", "dispatch", "completion", "compact", "close", "shutdown", "pause_dispatch", "resume_dispatch":
 		return true
 	}
 	return false

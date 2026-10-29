@@ -2,6 +2,25 @@
 
 本目录使用本机已有的 Focus Python 环境和真实源码，执行一个小范围 Run 链路。核心运行时仍只依赖 Go／Python 标准库；本联调额外复用 Focus 已有的 LangGraph、SQLAlchemy、psycopg 等依赖，以及本机已缓存的 `postgres:17-alpine` Docker 镜像。脚本不会下载镜像、修改 Focus 源码、读写桌面正式数据库或调用模型 API。
 
+## Patrol 跨激活接入（2026-10-29）
+
+新增 `run_patrol.py`，固定同一 Focus `340bf2b8`，使用真实 `LoopObservationService`、`PortfolioPatrol`、`LoopKernel`、`ContextRunPool`、`LoopCoordinator`、`LoopWaveDispatcher`、`RunOwnershipPolicy`、`LoopRunWorkspaceBinder`、`LoopRunExecutionBoundary` 和 `execute_prepared_run`／`run_agent`。本地确定性 agent／task-progress provider 与 Desktop launch port 是研究适配；没有模型调用，也未启动 Desktop HTTP 或完整 supervisor。
+
+```powershell
+& 'C:\Users\brubing\.focus\runtime\venv\Scripts\python.exe' `
+  integration/focus/run_patrol.py `
+  --focus-root 'C:\Users\brubing\Desktop\ag-project\focus' `
+  --out results/local/patrol-integration.json
+```
+
+七个场景：两个 Context 跨激活提前纠偏、runtime 落盘而 inbox 尚未写入时硬杀、决策 checkpoint／回执落盘而 runtime 尚未 ack 时硬杀、消费回执／outbox 已提交但后续动作尚未执行时硬杀、runtime revision 领先 SQL owner 时硬杀、queued 的允许恢复和撤权恢复。六个恢复场景都实际重启 daemon／桥接服务，不使用假传输或只抛异常来替代重启。
+
+每个 Context 有自己的 Loop／激活工作区，两个 Loop 共用同一个真实 ContextRunPool 和同一个 Go runtime。长期服务使用独立工具工作区、真实 lease，以及研究专用 `DesktopRun(kind="tool_service")` 租约锚点。此锚点不是模型激活，也不是已接入生产的服务身份系统。激活 lease 会释放，后台任务不持有原激活 token。原生 `AgentMessageDelivery` 仅证明 typed inbox 包含；另存精确决策 checkpoint、语义回执和稳定动作 outbox，之后才 ack。
+
+父进程在 marker 确认后分别杀死真实 Go daemon 和桥接 Python 子进程，无 graceful close；恢复案例的执行在中断前已完成或尚未派发，不把运行中 crash 伪装成 exactly-once。运行中恢复为 unknown 的任务继续隔离，服务拒绝重新取得该 job workspace。研究表仅在本次隔离 PostgreSQL 中建立，没有迁移 Focus 主仓数据库。
+
+完整证据与限制见 [Patrol 验收记录](../../docs/patrol-results.md)。全量本地检查可使用 `python scripts/verify.py --focus-root <checkout> --focus-python <existing-python> --focus-patrol`。以下记录保留早期 `run_live.py` 单次等待中 Run 的回归范围，不代表新增 Patrol 用例的完整范围。
+
 ## 已实际执行
 
 验证日期：2026-10-27。Focus 检出提交为 [`340bf2b8607dfb536d9376d400a02b122a4542bb`](https://github.com/Leeminjing/Focus/commit/340bf2b8607dfb536d9376d400a02b122a4542bb)，它是已核验 remote main [`853969375f9df46936552809dce3d543dd2403e4`](https://github.com/Leeminjing/Focus/commit/853969375f9df46936552809dce3d543dd2403e4) 的合并父提交。报告记录实际执行版本，未将新 main 冒充已测试版本。

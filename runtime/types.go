@@ -96,6 +96,7 @@ type Stats struct {
 	CachedEvents      int        `json:"wal_cached_events"`
 	CachedRuns        int        `json:"wal_cached_runs"`
 	PythonPool        *PoolStats `json:"python_pool,omitempty"`
+	DispatchPaused    bool       `json:"dispatch_paused"`
 	PendingSegments   int        `json:"wal_pending_segments"`
 	PendingBytes      int64      `json:"wal_pending_bytes"`
 	CompactionWorkers int        `json:"compaction_workers"`
@@ -136,6 +137,7 @@ type ExecutorFunc func(context.Context, Task) Result
 func (f ExecutorFunc) Execute(ctx context.Context, task Task) Result { return f(ctx, task) }
 
 type Config struct {
+	StartPaused    bool // Hold dispatch during trusted registration/authority recovery.
 	Concurrency    int
 	Capacity       int    // Global nonterminal task bound, independent of result backlogs.
 	PerRunCapacity int    // Nonterminal tasks + unacked facts per active Run; 0 uses Capacity/Concurrency.
@@ -147,6 +149,11 @@ type Config struct {
 	BeforeExecute  func(context.Context, Task) error
 	Trace          TraceFunc          // Optional diagnostics; does not change WAL acknowledgement policy.
 	compactionHook func(string) error // Internal deterministic crash/fault/slow-builder test seam.
+}
+
+type TaskIdentity struct {
+	Owner  Owner  `json:"owner"`
+	TaskID string `json:"task_id"`
 }
 
 type RunState struct {

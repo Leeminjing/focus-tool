@@ -38,6 +38,8 @@ python benchmarks/retention.py --out results/local/retention.json
 
 真实 Focus 接入需要其现有 Python 环境、源码与本机缓存的 PostgreSQL Docker 镜像，复现方法见 [接入说明](integration/focus/README.md)。核心测试不要求安装这些额外依赖。
 
+Patrol 跨激活接入使用独立结果服务持有逻辑任务、权限和租约：原 Focus Run 退出后工具继续执行，结果持久进入 Context inbox，经真实 Patrol／Kernel／ContextRunPool 派发后继 Run；决策 checkpoint、消费回执与动作 outbox 持久化后再 ack。包含两个 Context 提前纠偏、两个硬杀恢复点和 queued 派发恢复握手。合同见 [跨激活桥接](docs/patrol-bridge.md)，实测和生产边界见 [验收记录](docs/patrol-results.md)。
+
 短工具阶段测量须单独运行，避免与测试或其他实验并行：
 
 ```powershell
@@ -109,6 +111,7 @@ python -m unittest discover -s python/tests -v
 - [完整架构验证记录](docs/verification.md)：测试范围、结果、原始输出与验证限制。
 - [边界修复与完整链路性能](docs/boundaries-and-performance.md)：三项回归、最新对照、负对照和持续负载结果。
 - [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
+- [Patrol 跨激活结果桥接](docs/patrol-bridge.md)／[验收记录](docs/patrol-results.md)：独立任务生命周期、持久 inbox／决策消费、原身份恢复和真实重启测试。
 - [历史分页与有界状态](docs/history-retention.md)：保留策略、磁盘布局、压缩恢复、游标及万次完整链路实验。
 - [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
 - [短工具测量合同](docs/short-tools-method.md)：持久确认、准入、进程／函数、交付／消费、压缩和锁等待的精确边界。

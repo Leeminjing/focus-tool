@@ -137,6 +137,16 @@ class FocusToolAdapter:
             self._submitted.pop((run.owner["context_id"], run.owner["run_id"], identity), None)
         return status
 
+    async def resume_dispatch(self):
+        """Call after original-ID submissions rebuild trusted registrations.
+
+        The daemon rejects an incomplete queued inventory; its execution-time
+        hook still verifies the exact parameters and current permission/lease.
+        """
+        registered = [{"owner": {"context_id": context, "run_id": run}, "task_id": job}
+                      for context, run, job in self._submitted]
+        await self.client.resume_dispatch(registered)
+
     async def submit_tool_calls(self, run, message):
         parent = message.get("id") if isinstance(message, dict) else message.id
         calls = message.get("tool_calls", []) if isinstance(message, dict) else message.tool_calls
