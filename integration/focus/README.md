@@ -17,6 +17,20 @@
 
 `test_wake_controls.py` 另用真实适配类配 stub 控制依赖，验证部分 drain 的取消所有权、瞬时失败重试、关闭错误聚合、诊断回调隔离、失败 Run 的结算及页内归属；它不连接数据库，和真实 PostgreSQL 用例分开报告。全部可通过 `scripts/verify.py --focus-root <checkout> --focus-python <existing-python> --focus-patrol --focus-automatic` 顺序复现。合同见 [自动唤醒](../../docs/automatic-patrol.md)，证据见 [结果](../../docs/automatic-patrol-results.md)。下述旧七例保留用于恢复边界回归，其中手动调度只属于原场景控制。
 
+## 独立 Patrol 性能用例
+
+`benchmark_patrol.py` 经过上述自动服务和真实 Patrol 组件，使用 `patrol_benchmark_tools.py` 的有限固定工作量。barrier 只等待同 Context 的原始工具批，B 独立自然结束；event 可以提前纠偏，必要扫描场景则必须等扫描完成并持久消费。默认每臂 1 次 warmup、10 次正式测量，轮换场景和模式顺序。采集时单独运行，不与验证或其他基准并行：
+
+```powershell
+& 'C:\Users\brubing\.focus\runtime\venv\Scripts\python.exe' `
+  integration/focus/benchmark_patrol.py `
+  --focus-root 'C:\Users\brubing\Desktop\ag-project\focus' `
+  --out results/local/patrol-performance
+python integration/focus/benchmark_patrol.py --analyze results/local/patrol-performance
+```
+
+输出目录必须不存在。原始数据保留阶段调用、循环次数、产物读回、取消终态、typed checkpoint／回执和全部样本；失败不替换成成功样本。详见 [测量合同](../../docs/patrol-performance-method.md) 和 [实测报告](../../docs/patrol-performance-results.md)。
+
 ## Patrol 跨激活接入（2026-10-29）
 
 新增 `run_patrol.py`，固定同一 Focus `340bf2b8`，使用真实 `LoopObservationService`、`PortfolioPatrol`、`LoopKernel`、`ContextRunPool`、`LoopCoordinator`、`LoopWaveDispatcher`、`RunOwnershipPolicy`、`LoopRunWorkspaceBinder`、`LoopRunExecutionBoundary` 和 `execute_prepared_run`／`run_agent`。本地确定性 agent／task-progress provider 与 Desktop launch port 是研究适配；没有模型调用，也未启动 Desktop HTTP 或完整 supervisor。
