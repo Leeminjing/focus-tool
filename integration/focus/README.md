@@ -31,6 +31,8 @@ python integration/focus/benchmark_patrol.py --analyze results/local/patrol-perf
 
 输出目录必须不存在。原始数据保留阶段调用、循环次数、产物读回、取消终态、typed checkpoint／回执和全部样本；失败不替换成成功样本。详见 [测量合同](../../docs/patrol-performance-method.md) 和 [实测报告](../../docs/patrol-performance-results.md)。
 
+追加 `--task-progress-probe` 可观测固定版本 Focus 原生 TaskProgress 内部方法、accounting view、SQL 执行及 DBAPI commit 返回。默认不安装，所有 wrapper／监听器在服务关闭后恢复，不维护第二份业务实现。领取、预算预留、用量回填、校验和发布继续执行原方法；父子 inclusive 时间不能相加。详见 [探针方法](../../docs/task-progress-probe-method.md)／[定位结果](../../docs/task-progress-probe-results.md)。
+
 ## Patrol 跨激活接入（2026-10-29）
 
 新增 `run_patrol.py`，固定同一 Focus `340bf2b8`，使用真实 `LoopObservationService`、`PortfolioPatrol`、`LoopKernel`、`ContextRunPool`、`LoopCoordinator`、`LoopWaveDispatcher`、`RunOwnershipPolicy`、`LoopRunWorkspaceBinder`、`LoopRunExecutionBoundary` 和 `execute_prepared_run`／`run_agent`。本地确定性 agent／task-progress provider 与 Desktop launch port 是研究适配；没有模型调用，也未启动 Desktop HTTP 或完整 supervisor。

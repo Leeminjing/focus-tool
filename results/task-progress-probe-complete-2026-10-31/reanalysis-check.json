@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "source_fingerprints_matched": 45,
+  "on_trials": 44,
+  "off_trials": 16,
+  "original_summaries_equal": true,
+  "same_inputs_and_artifacts": true,
+  "probe_sql_events": 25164,
+  "probe_spans": 7396,
+  "sql_errors": 0,
+  "span_errors": {},
+  "accounting_views": {
+    "reserved": {
+      "calls": 2.0,
+      "ms": 57.26905,
+      "sql_count": 32.0,
+      "sql_ms": 43.5786
+    },
+    "actual": {
+      "calls": 2.0,
+      "ms": 49.268299999999996,
+      "sql_count": 32.0,
+      "sql_ms": 35.1821
+    }
+  },
+  "control_medians": {
+    "replan_barrier": {
+      "busy_ms": 397.3022,
+      "empty_ms": 6.5029
+    },
+    "replan_event": {
+      "busy_ms": 473.5484,
+      "empty_ms": 6.8825
+    },
+    "necessary_barrier": {
+      "busy_ms": 427.2387,
+      "empty_ms": 6.6802
+    },
+    "necessary_event": {
+      "busy_ms": 464.8165,
+      "empty_ms": 8.4864
+    }
+  },
+  "summary_sha256": {
+    "task-progress-probe-complete-2026-10-31\\summary.json": "0955da444f0e7481605596deb46bc391ec492b350b3a8bebd7db7bb7a61652b3",
+    "task-progress-probe-off-2026-10-31\\summary.json": "949e7ae61e95baacd0a8fb9d04eef3f87b56d06d2c1a5b2df116a8b9036fffdd"
+  }
+}
