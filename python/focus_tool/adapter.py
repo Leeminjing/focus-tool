@@ -21,10 +21,14 @@ class ToolDefinition:
     resources: tuple = ()  # Pairs of explicit shared resource name and read/write mode.
     timeout_ms: int = 30000
     reuse: bool = False  # Trusted stateless/leaf contract; never inferred from call arguments.
+    handler: object = None  # Host-only callable(task, cancellation_event); kept in this process.
 
     def __post_init__(self):
         if type(self.reuse) is not bool or (self.reuse and self.kind != "python"):
             raise ValueError("reuse must be a boolean trusted Python-tool declaration")
+        if self.kind == "host" and not (inspect.iscoroutinefunction(self.handler) or
+                inspect.iscoroutinefunction(getattr(self.handler, "__call__", None))):
+            raise ValueError("host tools require a trusted async handler")
 
 
 class FocusToolAdapter:
@@ -38,26 +42,33 @@ class FocusToolAdapter:
     def __init__(self, client, tools, *, workspace, before_execute=None):
         if client.authorize is not None:
             raise ValueError("client already has an admission hook; pass it to the adapter instead")
+        if getattr(client, "host_execute", None) is not None:
+            raise ValueError("client already has a host executor")
         self.client = client
         self.tools = dict(tools)
         self.workspace = str(Path(workspace).resolve())
         self.before_execute = before_execute
         self._submitted = {}
         self._uncertain = set()
+        self._host_registrations = {}
         client.authorize = self._authorize
         client.on_ack = self._acknowledged
         client.on_run_closed = self._run_closed
+        if any(definition.kind == "host" for definition in self.tools.values()):
+            client.host_execute = self._execute_host
 
     def _acknowledged(self, event):
         key = self._key(event["task"])
         self._submitted.pop(key, None)
         self._uncertain.discard(key)
+        self._host_registrations.pop(key, None)
 
     def _run_closed(self, owner):
         for key in list(self._submitted):
             if key[:2] == (owner["context_id"], owner["run_id"]):
                 self._submitted.pop(key)
                 self._uncertain.discard(key)
+                self._host_registrations.pop(key, None)
 
     @staticmethod
     def job_id(parent_message_id, call_id):
@@ -87,6 +98,8 @@ class FocusToolAdapter:
             if set(args) - {"argv"} or not isinstance(argv, list) or not all(isinstance(part, str) for part in argv):
                 raise ValueError("process arguments must be an argv list of strings")
             task["command"] = [*definition.command, *argv]
+        elif definition.kind == "host":
+            task["host"] = {"tool": name, "args": copy.deepcopy(args)}
         else:
             raise ValueError("unknown executor kind")
         # Fail before execution on values that cannot cross the local protocol.
@@ -99,6 +112,8 @@ class FocusToolAdapter:
         if previous is not None and previous != task:
             raise ValueError("tool call identity has conflicting arguments")
         self._submitted[key] = copy.deepcopy(task)
+        if task["kind"] == "host":
+            self._host_registrations.setdefault(key, self.tools[name].handler)
         try:
             status = await self.client.request("submit", task=task)
         except RemoteRejected as error:
@@ -106,6 +121,7 @@ class FocusToolAdapter:
                 return self._unknown_receipt(task, call_id, name, error)
             if previous is None:
                 self._submitted.pop(key, None)
+                self._host_registrations.pop(key, None)
             raise
         except RuntimeError as error:
             # Keep the registered identity so a delayed execution check/retry can
@@ -120,6 +136,7 @@ class FocusToolAdapter:
             # A historical retry will not emit a fresh event/Ack. It cannot
             # require execution authorization again, so retain no registration.
             self._submitted.pop(key, None)
+            self._host_registrations.pop(key, None)
         return {"role": "tool", "tool_call_id": call_id, "name": name,
                 "content": json.dumps({"job_id": task["id"], "state": "accepted"})}
 
@@ -135,6 +152,7 @@ class FocusToolAdapter:
         self._uncertain.discard((run.owner["context_id"], run.owner["run_id"], identity))
         if status["state"] in {"completed", "failed", "cancelled", "skipped", "unknown"}:
             self._submitted.pop((run.owner["context_id"], run.owner["run_id"], identity), None)
+            self._host_registrations.pop((run.owner["context_id"], run.owner["run_id"], identity), None)
         return status
 
     async def resume_dispatch(self):
@@ -175,7 +193,7 @@ class FocusToolAdapter:
         owner = task["owner"]
         return owner["context_id"], owner["run_id"], task["id"]
 
-    async def _authorize(self, task):
+    async def _authorize(self, task, *, host_entry=False):
         expected = copy.deepcopy(self._submitted.get(self._key(task)))
         if expected is None:
             raise PermissionError("task is not registered by this adapter")
@@ -190,10 +208,23 @@ class FocusToolAdapter:
         canonical = lambda value: {key: item for key, item in value.items() if item not in (None, {}, [], "", 0)}
         if canonical(actual) != canonical(expected):
             raise PermissionError("execution parameters differ from registered call")
-        if self.before_execute is not None:
+        # Host admission runs at actual host entry, after its dispatch wait.
+        if self.before_execute is not None and (task["kind"] != "host" or host_entry):
             result = self.before_execute(copy.deepcopy(task))
             if inspect.isawaitable(result):
                 result = await result
             if result is False:
                 raise PermissionError("workspace lease or permission no longer valid")
         return True
+
+    async def _execute_host(self, task, cancel):
+        handler = self._host_registrations.get(self._key(task))
+        try:
+            await self._authorize(task, host_entry=True)
+        except Exception as error:
+            return {"state": "failed", "error": str(error), "host": {"process_cleanup": "not_started"}}
+        if cancel.is_set():
+            return {"state": "cancelled", "host": {"process_cleanup": "not_started"}}
+        if handler is None:
+            return {"state": "failed", "error": "host registration unavailable", "host": {"process_cleanup": "not_started"}}
+        return await handler(copy.deepcopy(task), cancel)

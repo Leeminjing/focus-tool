@@ -113,10 +113,10 @@ python -m unittest discover -s python/tests -v
 - [完整架构验证记录](docs/verification.md)：测试范围、结果、原始输出与验证限制。
 - [边界修复与完整链路性能](docs/boundaries-and-performance.md)：三项回归、最新对照、负对照和持续负载结果。
 - [真实 Focus 接入](integration/focus/README.md)：真实权限、租约、checkpoint 和结果唤醒的执行依据。
+- [Host Tool 执行协议](docs/host-executor.md)：Go 调度、原生 ToolRuntime 宿主执行、取消回执与 unknown 隔离；[最新 Focus Shell 纵切验收](docs/host-executor-results.md)。
 - [Patrol 跨激活结果桥接](docs/patrol-bridge.md)／[验收记录](docs/patrol-results.md)：独立任务生命周期、持久 inbox／决策消费、原身份恢复和真实重启测试。
 - [自动 Patrol 唤醒](docs/automatic-patrol.md)：持久 pending、Loop 合并、忙碌／容量等待、无通知恢复与服务生命周期；[验证记录](docs/automatic-patrol-results.md)。
 - [真实 Patrol 性能对照](docs/patrol-performance-method.md)：同 Context barrier／event、有限工具、真实调度阶段计时与原始轨迹重算；[实测结果](docs/patrol-performance-results.md)。
-- [TaskProgress 内部探针](docs/task-progress-probe-method.md)：可选的原生方法、accounting view、SQL 与 DBAPI commit 计时；[定位结果](docs/task-progress-probe-results.md)。
 - [历史分页与有界状态](docs/history-retention.md)：保留策略、磁盘布局、压缩恢复、游标及万次完整链路实验。
 - [万次任务验收结果](docs/retention-results.md)：320 次 Run 生命周期、近期缓存／Go 堆、原始轨迹及尚未覆盖的 Patrol 边界。
 - [短工具测量合同](docs/short-tools-method.md)：持久确认、准入、进程／函数、交付／消费、压缩和锁等待的精确边界。

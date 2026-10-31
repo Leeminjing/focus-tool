@@ -94,7 +94,6 @@ class PatrolHarness:
         self.defer_actions = False
         self.wait_started = True
         self.trace = None
-        self.progress_probe = None  # Optional observer; native methods stay authoritative.
         self.initial_operations = {}
         self.before_exit = None  # Local fixture can hold a live activation.
         self.after_inbox_snapshot = None
@@ -352,11 +351,7 @@ class PatrolHarness:
             while True:
                 calls += 1
                 with self.phase("task_progress", **identity, iteration=iteration, call=calls) as detail:
-                    if self.progress_probe is None:
-                        processed = await self.progress.drain(loop_id=owner["loop_id"])
-                    else:
-                        processed = await self.progress_probe.drain(self.progress,
-                            loop_id=owner["loop_id"], schedule_id=schedule_id)
+                    processed = await self.progress.drain(loop_id=owner["loop_id"])
                     detail["work_items"] = processed
                 work += processed
                 if not processed:

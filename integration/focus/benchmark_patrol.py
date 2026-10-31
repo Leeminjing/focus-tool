@@ -26,7 +26,6 @@ import uuid
 
 from run_patrol import ROOT, FOCUS_COMMIT, command, environment
 from patrol_benchmark_tools import digest_work, write_json
-from task_progress_probe import TaskProgressProbe, probe_summary, validate_probe_trace
 
 
 class BatchWakeStore:
@@ -109,16 +108,12 @@ async def trial(args, mode, scenario, workload):
     from focus.runtime.checkpointer import dispose_checkpointer
     from focus_tool import ToolDefinition
     from patrol_driver import PatrolResultService
-    trace, app, probe = [], None, None
+    trace, app = [], None
     record = {"mode": mode, "scenario": scenario, "passed": False,
               "measured": args.measured, "repetition": args.repetition, "index": args.index}
     clock_start = time.time_ns()
     measure_start = None
     try:
-        if args.task_progress_probe:
-            from patrol_activation import LocalProgress
-            probe = TaskProgressProbe(trace.append).install(harness.progress, engine, LocalProgress)
-            harness.progress_probe = probe
         a, b = await harness.bootstrap("A"), await harness.bootstrap("B")
         check = "check" if scenario == "replan" else "valid_check"
         harness.initial_operations[a["context_id"]] = (check, "scan")
@@ -272,12 +267,6 @@ async def trial(args, mode, scenario, workload):
                 record["failed_workspace"] = archive.name
             except Exception as error:
                 cleanup_errors.append("workspace archive: " + repr(error))
-        if probe:
-            try:
-                probe.close()
-                harness.progress_probe = None
-            except Exception as error:
-                cleanup_errors.append("progress probe: " + repr(error))
         for name, close in (("checkpointer", lambda: dispose_checkpointer(saver)), ("database", engine.dispose)):
             try:
                 await close()
@@ -302,12 +291,6 @@ async def trial(args, mode, scenario, workload):
             closed = time.perf_counter_ns()
             record.setdefault("metrics", {})["service_start_through_shutdown_ms"] = (closed - measure_start) / 1e6
             trace.append({"kind": "shutdown_finished", "time_ns": time.time_ns(), "monotonic_ns": closed})
-        if probe:
-            record["task_progress_all"] = probe_summary(trace)
-            if "first_response_window" in record:
-                window = record["first_response_window"]
-                record["task_progress_first_response"] = probe_summary(trace, loop_id=window["loop_id"],
-                    after=window["after_ns"], through=window["through_ns"])
         args.sample.parent.mkdir(parents=True, exist_ok=True)
         try:
             with gzip.open(args.sample.with_suffix(".trace.jsonl.gz"), "wt", encoding="utf-8") as output:
@@ -354,17 +337,6 @@ def analyze(samples, repeat=None):
                 "activation_count_medians": {label: statistics.median(sum(item["context_id"] == row["owners"][label]
                     for item in row["activations"]) for row in rows) for label in ("A", "B")},
                 "scan_states": dict(Counter(row["scan_state"] for row in rows))}
-            if any("task_progress_first_response" in row for row in rows):
-                assert all("task_progress_first_response" in row for row in rows)
-                details = {}
-                for category in ("work", "empty", "failed"):
-                    phases = {phase for row in rows for phase in row["task_progress_first_response"][category]}
-                    details[category] = {phase: {**{key: statistics.median(
-                        row["task_progress_first_response"][category].get(phase, {}).get(key, 0) for row in rows)
-                        for key in ("calls", "total_ms", "exclusive_ms", "window_wall_ms", "sql_count", "sql_ms")},
-                        "sql_errors_total": sum(row["task_progress_first_response"][category].get(phase, {}).get("sql_errors", 0) for row in rows)}
-                        for phase in sorted(phases)}
-                result[scenario][mode]["task_progress_phase_medians"] = details
     return result
 
 
@@ -411,13 +383,6 @@ def load_collection(directory):
             and item["loop_id"] == window["loop_id"] and window["after_ns"] <= item["time_ns"] <= window["through_ns"])
             for key in ("round_iterations", "progress_drain_calls", "progress_work_items")}
         assert loops == row["first_response_loops"]
-        if config.get("task_progress_probe"):
-            validate_probe_trace(trace)
-            assert row["task_progress_first_response"] == probe_summary(trace,
-                loop_id=window["loop_id"], after=window["after_ns"], through=window["through_ns"])
-            assert row["task_progress_all"] == probe_summary(trace)
-            assert row["task_progress_all"]["work"]["accounting_view"]["calls"] > 0
-            assert row["task_progress_all"]["work"]["transaction_commit"]["calls"] > 0
         rows.append(row)
     for scenario in ("replan", "necessary"):
         for mode in ("barrier", "event"):
@@ -435,7 +400,6 @@ def main():
     parser.add_argument("--warmup", type=int, default=1, help="unmeasured trials per scenario/mode, retained")
     parser.add_argument("--scan-seconds", type=float, default=8.0, help="one-time local calibration target, not a tool timer")
     parser.add_argument("--passes", type=int, help="explicit fixed SHA-256 passes, skip duration calibration")
-    parser.add_argument("--task-progress-probe", action="store_true", help="observe native TaskProgress methods, SQL and DBAPI commits")
     args = parser.parse_args()
     if args.analyze:
         _, _, summary = load_collection(args.analyze)
@@ -466,7 +430,6 @@ def main():
         "source_sha256": fingerprints, "workload": workload, "repeat": args.repeat, "warmup_per_arm": args.warmup,
         "platform": platform.platform(), "python": sys.version, "go": command("go", "version"),
         "tool_concurrency": 4, "run_concurrency": 2, "journal": "per-mutation fsync; default background 8 MiB",
-        "task_progress_probe": args.task_progress_probe,
         "decision_rule": "barrier waits only same-Context original batch; B is independent and finite",
         "started_at_utc": datetime.now(UTC).isoformat()}
     (args.out / "config.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
