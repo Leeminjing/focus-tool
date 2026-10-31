@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "stdlib_python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "trial_count": 44,
+  "measured": 40,
+  "source_fingerprints_matched": 44,
+  "raw_summary_equal": true,
+  "measured_loop_counts": {
+    "2/4/2": 39,
+    "7/9/2": 1
+  },
+  "original_summary_sha256": "9687566c020b5d0391e7bcba48229acf3ae3049c9802124e4b243d740ef3020f"
+}

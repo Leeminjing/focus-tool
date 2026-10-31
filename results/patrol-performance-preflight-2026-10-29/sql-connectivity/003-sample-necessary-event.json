@@ -1,0 +1,12 @@
+{
+  "mode": "event",
+  "scenario": "necessary",
+  "passed": false,
+  "measured": true,
+  "repetition": 1,
+  "index": 3,
+  "error": "TimeoutError(10060, \"Connect call failed ('127.0.0.1', 50407)\")",
+  "shutdown_errors": [],
+  "shutdown_ms": 70.0583,
+  "trial_wall_start_ns": 1793242400200640800
+}

@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "scope": "real adapter classes, stub controls, no database/provider connection"
+}

@@ -1,0 +1,832 @@
+{
+  "mode": "barrier",
+  "scenario": "replan",
+  "passed": true,
+  "measured": true,
+  "repetition": 7,
+  "index": 28,
+  "setup_ms": 4026.2474,
+  "input_sha256": {
+    "A": {
+      "input.json": "860dd8ce7240d261bf0c4e641525d5215a892022979e521f5cd52f1de57e37e5",
+      "scan-input.json": "860dd8ce7240d261bf0c4e641525d5215a892022979e521f5cd52f1de57e37e5",
+      "workload.json": "1a10d557010d86a86271da8eea806511aaf7efdb4467ed172c29bd59acf414e7",
+      "corpus.bin": "190ab3f50bee44b6324a28ff7785b2b341df9b2ca5aa7deacf48809da31e6c35"
+    },
+    "B": {
+      "input.json": "ddd5ce1da41ae56c1b7eb63cc93bcdbdc544d4469c22815fa722c69458ece403",
+      "scan-input.json": "ddd5ce1da41ae56c1b7eb63cc93bcdbdc544d4469c22815fa722c69458ece403",
+      "workload.json": "a1e58e157fde4bec83be66fef7fde396ec24411f83f6d1d1f98bbd4a2836429c",
+      "corpus.bin": "7ce214319afac6d2e35079a3a3ebbb6b4001435a213504ac102777830d0b3a33"
+    }
+  },
+  "owners": {
+    "A": "6f6a3afab2214365ab4f8dadd06c999f",
+    "B": "62b75e1adca4465d875863c8da802e14"
+  },
+  "loops": {
+    "A": "a80f1cab674d4132a99b0289aa016414",
+    "B": "64c0f38bed34418ab78b60735ff94c9f"
+  },
+  "original_batches": {
+    "6f6a3afab2214365ab4f8dadd06c999f": [
+      "8a167844ca78343561dae64258c653e9e08850c8b756011a5f6816aa08ae775d",
+      "ee7fd7d8d0cbf1ecb2c60215188bbe448e2fd0541aa98ede819abd4430a865eb"
+    ],
+    "62b75e1adca4465d875863c8da802e14": [
+      "a9565e82e0f572a96c67d1f2af236cb11b68bdbf3b59dc0c7d18709d9e8d1e8f"
+    ]
+  },
+  "metrics": {
+    "service_start_to_quiescent_ms": 32151.4028,
+    "first_body_to_quiescent_ms": 26870.6385,
+    "check_finished_to_effective_ms": 19812.2536,
+    "service_start_through_shutdown_ms": 32244.2168
+  },
+  "canonical_artifacts": {
+    "A": {
+      "input_id": "fixed-A",
+      "outcome": "configuration repaired",
+      "valid": true
+    },
+    "A_config": {
+      "input_id": "fixed-A",
+      "valid": true
+    },
+    "B": {
+      "digest": "e672896a977d3576c781c336c4d6aa73f6396aa508e9105f44bcc6efc1e32858",
+      "input_id": "fixed-B",
+      "passes": 365,
+      "valid": true
+    }
+  },
+  "effective_followup": {
+    "time_ns": 1793244486803856800,
+    "definition": "actual repair function entry"
+  },
+  "attempts": {
+    "A": {
+      "check": [
+        {
+          "pid": 45036,
+          "started_ns": 1793244466975363400
+        }
+      ],
+      "repair": [
+        {
+          "pid": 42456,
+          "started_ns": 1793244486803856800
+        }
+      ],
+      "scan": [
+        {
+          "pid": 34252,
+          "started_ns": 1793244467382422800
+        }
+      ]
+    },
+    "B": {
+      "independent": [
+        {
+          "pid": 3324,
+          "started_ns": 1793244466663198300
+        }
+      ]
+    }
+  },
+  "facts": {
+    "A": [
+      {
+        "task": {
+          "id": "ee7fd7d8d0cbf1ecb2c60215188bbe448e2fd0541aa98ede819abd4430a865eb",
+          "kind": "python",
+          "owner": {
+            "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+            "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+          },
+          "python": {
+            "args": {
+              "root": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-patrol-performance-h40jgtcm\\trial_28\\A\\jobs",
+              "operation": "check"
+            },
+            "module": "patrol_benchmark_tools",
+            "function": "perform",
+            "interpreter": "C:\\Users\\brubing\\.focus\\runtime\\venv\\Scripts\\python.exe"
+          },
+          "revision": 1,
+          "directory": "D:\\focus-tool\\integration\\focus",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "pid": 50412,
+          "state": "completed",
+          "output": "{\"valid\": false}\r\n"
+        },
+        "timing": {
+          "queued_ns": 1793244466659457500,
+          "started_ns": 1793244466661742200,
+          "finished_ns": 1793244466991603200
+        },
+        "sequence": 1
+      },
+      {
+        "task": {
+          "id": "8a167844ca78343561dae64258c653e9e08850c8b756011a5f6816aa08ae775d",
+          "kind": "python",
+          "owner": {
+            "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+            "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+          },
+          "python": {
+            "args": {
+              "root": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-patrol-performance-h40jgtcm\\trial_28\\A\\jobs",
+              "operation": "scan"
+            },
+            "module": "patrol_benchmark_tools",
+            "function": "perform",
+            "interpreter": "C:\\Users\\brubing\\.focus\\runtime\\venv\\Scripts\\python.exe"
+          },
+          "revision": 1,
+          "directory": "D:\\focus-tool\\integration\\focus",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "pid": 51856,
+          "state": "completed",
+          "output": "{\"digest\": \"1d7459d2f1f8fcbadf3a3e27f88f4487a26eff996649707b3ded45232f890ec5\", \"passes\": 1461, \"input_id\": \"fixed-A\"}\r\n"
+        },
+        "timing": {
+          "queued_ns": 1793244466994212800,
+          "started_ns": 1793244466995956100,
+          "finished_ns": 1793244480912088500
+        },
+        "sequence": 3
+      },
+      {
+        "task": {
+          "id": "9025bed8b9a4cf8dd74fac6b6bff29abbd6e972cc47a99c41a32c2ef6bf55a9b",
+          "kind": "python",
+          "owner": {
+            "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+            "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+          },
+          "python": {
+            "args": {
+              "root": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-patrol-performance-h40jgtcm\\trial_28\\A\\jobs",
+              "operation": "repair"
+            },
+            "module": "patrol_benchmark_tools",
+            "function": "perform",
+            "interpreter": "C:\\Users\\brubing\\.focus\\runtime\\venv\\Scripts\\python.exe"
+          },
+          "revision": 2,
+          "directory": "D:\\focus-tool\\integration\\focus",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "pid": 50344,
+          "state": "completed",
+          "output": "{\"valid\": true, \"outcome\": \"configuration repaired\", \"input_id\": \"fixed-A\"}\r\n"
+        },
+        "timing": {
+          "queued_ns": 1793244486487643700,
+          "started_ns": 1793244486489071700,
+          "finished_ns": 1793244486823266600
+        },
+        "sequence": 4
+      }
+    ],
+    "B": [
+      {
+        "task": {
+          "id": "a9565e82e0f572a96c67d1f2af236cb11b68bdbf3b59dc0c7d18709d9e8d1e8f",
+          "kind": "python",
+          "owner": {
+            "run_id": "b2be34ac70e244cd9330fe7859756908",
+            "context_id": "62b75e1adca4465d875863c8da802e14"
+          },
+          "python": {
+            "args": {
+              "root": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-tool-patrol-performance-h40jgtcm\\trial_28\\B\\jobs",
+              "operation": "independent"
+            },
+            "module": "patrol_benchmark_tools",
+            "function": "perform",
+            "interpreter": "C:\\Users\\brubing\\.focus\\runtime\\venv\\Scripts\\python.exe"
+          },
+          "revision": 1,
+          "directory": "D:\\focus-tool\\integration\\focus",
+          "timeout_ms": 30000
+        },
+        "result": {
+          "pid": 44232,
+          "state": "completed",
+          "output": "{\"digest\": \"e672896a977d3576c781c336c4d6aa73f6396aa508e9105f44bcc6efc1e32858\", \"passes\": 365, \"input_id\": \"fixed-B\"}\r\n"
+        },
+        "timing": {
+          "queued_ns": 1793244466173085700,
+          "started_ns": 1793244466176261100,
+          "finished_ns": 1793244468672581900
+        },
+        "sequence": 2
+      }
+    ]
+  },
+  "receipts": {
+    "A": [
+      {
+        "sequence": 1,
+        "message_id": "44fee805d3db44826c0bcd736a4dd33e",
+        "receipt": {
+          "checkpoint": {
+            "configurable": {
+              "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+              "checkpoint_id": "1f1d348c-146d-61fc-8008-becfc9203a68",
+              "checkpoint_ns": ""
+            }
+          },
+          "event_hash": "68d8ecb27d818b172add53297c189c5ba0181d80f9bd96ff1e6e314bf0162c7e",
+          "consumed_at": "2026-10-29T03:28:06.041286+00:00",
+          "decisions_hash": "8deb42b1284dab1f5ba1fd675b05d72e02c9784b2fb7a60aac0710dc4b96a1c3",
+          "native_checkpoint": "1f1d348c-1303-6462-8007-e4a862c4cbcc"
+        },
+        "acked": true
+      },
+      {
+        "sequence": 3,
+        "message_id": "c0ef6600fe2e8a10c52919956ad718b0",
+        "receipt": {
+          "checkpoint": {
+            "configurable": {
+              "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+              "checkpoint_id": "1f1d348c-146d-61fc-8008-becfc9203a68",
+              "checkpoint_ns": ""
+            }
+          },
+          "event_hash": "1082bcfb7ff0bfb4e9b6faffb5ebc47807a38e40377ef50c9b6b855585d99d79",
+          "consumed_at": "2026-10-29T03:28:06.054698+00:00",
+          "decisions_hash": "8deb42b1284dab1f5ba1fd675b05d72e02c9784b2fb7a60aac0710dc4b96a1c3",
+          "native_checkpoint": "1f1d348c-1303-6462-8007-e4a862c4cbcc"
+        },
+        "acked": true
+      },
+      {
+        "sequence": 4,
+        "message_id": "9f9c365adadc011ef160bebb93437aaa",
+        "receipt": {
+          "checkpoint": {
+            "configurable": {
+              "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+              "checkpoint_id": "1f1d348c-4ec2-6c40-800c-5bfab06f8fe4",
+              "checkpoint_ns": ""
+            }
+          },
+          "event_hash": "b6b4677818ddae3507738253e70a76c8142bd4b8df1ae777f9bb83c7c203a5d9",
+          "consumed_at": "2026-10-29T03:28:12.128471+00:00",
+          "decisions_hash": "5bac3bb81876543346c6c9b2cacab0b416fffeff0ea2c15729e8ec342014eade",
+          "native_checkpoint": "1f1d348c-4e03-65c8-800b-2e3beb7a1087"
+        },
+        "acked": true
+      }
+    ],
+    "B": [
+      {
+        "sequence": 2,
+        "message_id": "b9f44564afcc8ee55ef3760673ebed7c",
+        "receipt": {
+          "checkpoint": {
+            "configurable": {
+              "thread_id": "patrol-62b75e1adca4465d875863c8da802e14",
+              "checkpoint_id": "1f1d348b-9968-65f0-8008-590765af1a81",
+              "checkpoint_ns": ""
+            }
+          },
+          "event_hash": "9847eaf4ae0de5db9dbacf053765d4a98663cf0f955e17b2c01cc0ae7896cde4",
+          "consumed_at": "2026-10-29T03:27:53.079649+00:00",
+          "decisions_hash": "3dd65415d01f152f07e4f02a44b676a4b9416dcb4a11ad954c84db9a330fd882",
+          "native_checkpoint": "1f1d348b-9873-65a5-8007-d87b8b321990"
+        },
+        "acked": true
+      }
+    ]
+  },
+  "activations": [
+    {
+      "context_id": "62b75e1adca4465d875863c8da802e14",
+      "run_id": "e72fd8b2233949bdbc861579030ec8e9",
+      "checkpoint": {
+        "configurable": {
+          "thread_id": "patrol-62b75e1adca4465d875863c8da802e14",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1d348b-5ad9-6087-8005-6ca47b171a8e"
+        }
+      },
+      "status": "success",
+      "error": null,
+      "logical_run": "b2be34ac70e244cd9330fe7859756908",
+      "exited_ns": 1793244467570992400,
+      "activation_lease_id": "e938fc9abe59496cad93dd28405e12e7",
+      "activation_fencing_token": 1,
+      "decisions": []
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "run_id": "7f25a7fba930443a87d31c715e50b8be",
+      "checkpoint": {
+        "configurable": {
+          "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1d348b-616a-6dce-8005-95713ffa968e"
+        }
+      },
+      "status": "success",
+      "error": null,
+      "logical_run": "add7c85be46840ef8f6f6304a838d9c5",
+      "exited_ns": 1793244468152295400,
+      "activation_lease_id": "f95a5720d9ce499fa50bcc5299607e15",
+      "activation_fencing_token": 1,
+      "decisions": []
+    },
+    {
+      "context_id": "62b75e1adca4465d875863c8da802e14",
+      "run_id": "c5f7aedf609d486382ad28ba89914f21",
+      "checkpoint": {
+        "configurable": {
+          "thread_id": "patrol-62b75e1adca4465d875863c8da802e14",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1d348b-9a88-647a-8009-a1bd598a06f0"
+        }
+      },
+      "status": "success",
+      "error": null,
+      "logical_run": "b2be34ac70e244cd9330fe7859756908",
+      "exited_ns": 1793244473870833900,
+      "activation_lease_id": "eb7cb4d74de147edb33585c71f3843eb",
+      "activation_fencing_token": 2,
+      "decisions": [
+        {
+          "identity": [
+            "62b75e1adca4465d875863c8da802e14",
+            "b2be34ac70e244cd9330fe7859756908",
+            2
+          ],
+          "event_hash": "9847eaf4ae0de5db9dbacf053765d4a98663cf0f955e17b2c01cc0ae7896cde4",
+          "decision": "consumed"
+        }
+      ]
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "run_id": "b700869653c24dde8709cb20d7ea5d26",
+      "checkpoint": {
+        "configurable": {
+          "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1d348c-1af2-6832-8009-60ca7c49928e"
+        }
+      },
+      "status": "success",
+      "error": null,
+      "logical_run": "add7c85be46840ef8f6f6304a838d9c5",
+      "exited_ns": 1793244487358661300,
+      "activation_lease_id": "37cd819fd1364e1685c8f6bcb91b8eb3",
+      "activation_fencing_token": 2,
+      "decisions": [
+        {
+          "identity": [
+            "6f6a3afab2214365ab4f8dadd06c999f",
+            "add7c85be46840ef8f6f6304a838d9c5",
+            1
+          ],
+          "event_hash": "68d8ecb27d818b172add53297c189c5ba0181d80f9bd96ff1e6e314bf0162c7e",
+          "decision": "redirect"
+        },
+        {
+          "identity": [
+            "6f6a3afab2214365ab4f8dadd06c999f",
+            "add7c85be46840ef8f6f6304a838d9c5",
+            3
+          ],
+          "event_hash": "1082bcfb7ff0bfb4e9b6faffb5ebc47807a38e40377ef50c9b6b855585d99d79",
+          "decision": "consumed"
+        }
+      ]
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "run_id": "7a136655ce814676b7a87fa4b930f28e",
+      "checkpoint": {
+        "configurable": {
+          "thread_id": "patrol-6f6a3afab2214365ab4f8dadd06c999f",
+          "checkpoint_ns": "",
+          "checkpoint_id": "1f1d348c-5032-67af-800d-7232bd3970fe"
+        }
+      },
+      "status": "success",
+      "error": null,
+      "logical_run": "add7c85be46840ef8f6f6304a838d9c5",
+      "exited_ns": 1793244493244752000,
+      "activation_lease_id": "6cbb032b10f44a7e8a2a991f2d374ac2",
+      "activation_fencing_token": 3,
+      "decisions": [
+        {
+          "identity": [
+            "6f6a3afab2214365ab4f8dadd06c999f",
+            "add7c85be46840ef8f6f6304a838d9c5",
+            4
+          ],
+          "event_hash": "b6b4677818ddae3507738253e70a76c8142bd4b8df1ae777f9bb83c7c203a5d9",
+          "decision": "consumed"
+        }
+      ]
+    }
+  ],
+  "first_response_phases": {
+    "coordinator_claim": {
+      "calls": 1,
+      "total_ms": 141.8217,
+      "median_call_ms": 141.8217,
+      "window_wall_ms": 142.1107,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "coordinator_release": {
+      "calls": 1,
+      "total_ms": 20.2224,
+      "median_call_ms": 20.2224,
+      "window_wall_ms": 19.9889,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "kernel_commit": {
+      "calls": 1,
+      "total_ms": 618.4266,
+      "median_call_ms": 618.4266,
+      "window_wall_ms": 618.4831,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "observation_capture": {
+      "calls": 1,
+      "total_ms": 959.3328,
+      "median_call_ms": 959.3328,
+      "window_wall_ms": 959.0689,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "patrol_decision": {
+      "calls": 1,
+      "total_ms": 69.3945,
+      "median_call_ms": 69.3945,
+      "window_wall_ms": 69.0045,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_identity_read": {
+      "calls": 1,
+      "total_ms": 6.742,
+      "median_call_ms": 6.742,
+      "window_wall_ms": 6.8306,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_maintenance": {
+      "calls": 2,
+      "total_ms": 815.3134,
+      "median_call_ms": 407.6567,
+      "window_wall_ms": 814.4524,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_state_read": {
+      "calls": 2,
+      "total_ms": 23.9114,
+      "median_call_ms": 11.9557,
+      "window_wall_ms": 24.8027,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "schedule_total": {
+      "calls": 1,
+      "total_ms": 3893.5027,
+      "median_call_ms": 3893.5027,
+      "window_wall_ms": 3893.3044,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "task_progress": {
+      "calls": 4,
+      "total_ms": 1237.5503,
+      "median_call_ms": 267.45355,
+      "window_wall_ms": 1237.9714,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    }
+  },
+  "all_phases": {
+    "coordinator_claim": {
+      "calls": 5,
+      "total_ms": 402.3352,
+      "median_call_ms": 75.1859,
+      "window_wall_ms": 402.8477,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "coordinator_release": {
+      "calls": 5,
+      "total_ms": 89.7757,
+      "median_call_ms": 19.7494,
+      "window_wall_ms": 90.626,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "kernel_commit": {
+      "calls": 5,
+      "total_ms": 3232.9696,
+      "median_call_ms": 619.3299,
+      "window_wall_ms": 3232.1525,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "observation_capture": {
+      "calls": 5,
+      "total_ms": 6441.4233,
+      "median_call_ms": 974.2691,
+      "window_wall_ms": 6440.6241,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "patrol_decision": {
+      "calls": 5,
+      "total_ms": 433.2069,
+      "median_call_ms": 85.2976,
+      "window_wall_ms": 433.4249,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_identity_read": {
+      "calls": 5,
+      "total_ms": 54.757,
+      "median_call_ms": 8.4804,
+      "window_wall_ms": 55.28,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_maintenance": {
+      "calls": 8,
+      "total_ms": 2698.7339,
+      "median_call_ms": 275.35815,
+      "window_wall_ms": 2697.2611,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "round_state_read": {
+      "calls": 8,
+      "total_ms": 106.422,
+      "median_call_ms": 11.4117,
+      "window_wall_ms": 107.5214,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "schedule_total": {
+      "calls": 5,
+      "total_ms": 16789.4174,
+      "median_call_ms": 3493.2046,
+      "window_wall_ms": 16789.2198,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    },
+    "task_progress": {
+      "calls": 14,
+      "total_ms": 3326.8057,
+      "median_call_ms": 15.444849999999999,
+      "window_wall_ms": 3327.3099,
+      "crosses_start": 0,
+      "crosses_end": 0,
+      "wall_clock_anomalies": 0
+    }
+  },
+  "first_response_window": {
+    "loop_id": "a80f1cab674d4132a99b0289aa016414",
+    "after_ns": 1793244466991603200,
+    "through_ns": 1793244484922223000
+  },
+  "first_response_loops": {
+    "round_iterations": 2,
+    "progress_drain_calls": 4,
+    "progress_work_items": 2
+  },
+  "loop_counts": [
+    {
+      "kind": "patrol_loops",
+      "time_ns": 1793244461546825400,
+      "schedule_id": "03fff1fe80f14534b7092b4c8f6db3db",
+      "loop_id": "a80f1cab674d4132a99b0289aa016414",
+      "context_ids": [
+        "6f6a3afab2214365ab4f8dadd06c999f"
+      ],
+      "round_iterations": 1,
+      "progress_drain_calls": 1,
+      "progress_work_items": 0
+    },
+    {
+      "kind": "patrol_loops",
+      "time_ns": 1793244461571428600,
+      "schedule_id": "b582ac3a26cc46a4b05d12ae40429b81",
+      "loop_id": "64c0f38bed34418ab78b60735ff94c9f",
+      "context_ids": [
+        "62b75e1adca4465d875863c8da802e14"
+      ],
+      "round_iterations": 1,
+      "progress_drain_calls": 1,
+      "progress_work_items": 0
+    },
+    {
+      "kind": "patrol_loops",
+      "time_ns": 1793244470745507100,
+      "schedule_id": "c4f2171d70444b5b8df78654ca050149",
+      "loop_id": "64c0f38bed34418ab78b60735ff94c9f",
+      "context_ids": [
+        "62b75e1adca4465d875863c8da802e14"
+      ],
+      "round_iterations": 2,
+      "progress_drain_calls": 4,
+      "progress_work_items": 2
+    },
+    {
+      "kind": "patrol_loops",
+      "time_ns": 1793244483106145100,
+      "schedule_id": "50a701f0e0ec49ebb3187b9833070d4e",
+      "loop_id": "a80f1cab674d4132a99b0289aa016414",
+      "context_ids": [
+        "6f6a3afab2214365ab4f8dadd06c999f"
+      ],
+      "round_iterations": 2,
+      "progress_drain_calls": 4,
+      "progress_work_items": 2
+    },
+    {
+      "kind": "patrol_loops",
+      "time_ns": 1793244489574104600,
+      "schedule_id": "a3bd8dda00e04cbe8c325a888efa50b3",
+      "loop_id": "a80f1cab674d4132a99b0289aa016414",
+      "context_ids": [
+        "6f6a3afab2214365ab4f8dadd06c999f"
+      ],
+      "round_iterations": 2,
+      "progress_drain_calls": 4,
+      "progress_work_items": 2
+    }
+  ],
+  "runtime_stats": {
+    "running": 0,
+    "queued": 0,
+    "unacknowledged": 0,
+    "retained_tasks": 0,
+    "retained_events": 0,
+    "heap_bytes": 1518312,
+    "journal_bytes": 14006,
+    "resident_runs": 2,
+    "queue_owners": 0,
+    "unknown_fences": 0,
+    "compactions": 0,
+    "wal_cached_tasks": 4,
+    "wal_cached_events": 4,
+    "wal_cached_runs": 2,
+    "dispatch_paused": false,
+    "wal_pending_segments": 0,
+    "wal_pending_bytes": 0,
+    "compaction_workers": 0,
+    "compaction_backpressure_waits": 0,
+    "published_sequence": 0
+  },
+  "scan_state": "completed",
+  "publications": [
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "sequence": 1,
+      "persist_started_ns": 1793244466999676900,
+      "published_ns": 1793244467046946200,
+      "notified_ns": 1793244467046946200
+    },
+    {
+      "context_id": "62b75e1adca4465d875863c8da802e14",
+      "sequence": 2,
+      "persist_started_ns": 1793244468676107000,
+      "published_ns": 1793244468702956000,
+      "notified_ns": 1793244468703612300
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "sequence": 3,
+      "persist_started_ns": 1793244480922320200,
+      "published_ns": 1793244480962826300,
+      "notified_ns": 1793244480962826300
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "sequence": 4,
+      "persist_started_ns": 1793244486831761500,
+      "published_ns": 1793244486870089400,
+      "notified_ns": 1793244486870089400
+    }
+  ],
+  "actions": [
+    {
+      "context_id": "62b75e1adca4465d875863c8da802e14",
+      "action_id": "62b75e1adca4465d875863c8da802e14:independent",
+      "job_id": "a9565e82e0f572a96c67d1f2af236cb11b68bdbf3b59dc0c7d18709d9e8d1e8f",
+      "revision": 1,
+      "restore": false,
+      "started_ns": 1793244466166410400,
+      "accepted_ns": 1793244466347040200
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "action_id": "6f6a3afab2214365ab4f8dadd06c999f:check",
+      "job_id": "ee7fd7d8d0cbf1ecb2c60215188bbe448e2fd0541aa98ede819abd4430a865eb",
+      "revision": 1,
+      "restore": false,
+      "started_ns": 1793244466651422200,
+      "accepted_ns": 1793244466688452800
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "action_id": "6f6a3afab2214365ab4f8dadd06c999f:scan",
+      "job_id": "8a167844ca78343561dae64258c653e9e08850c8b756011a5f6816aa08ae775d",
+      "revision": 1,
+      "restore": false,
+      "started_ns": 1793244466990441400,
+      "accepted_ns": 1793244467057839600
+    },
+    {
+      "context_id": "6f6a3afab2214365ab4f8dadd06c999f",
+      "action_id": "6f6a3afab2214365ab4f8dadd06c999f:repair",
+      "job_id": "9025bed8b9a4cf8dd74fac6b6bff29abbd6e972cc47a99c41a32c2ef6bf55a9b",
+      "revision": 2,
+      "restore": false,
+      "started_ns": 1793244486469902900,
+      "accepted_ns": 1793244486524642700
+    }
+  ],
+  "consumptions": [
+    {
+      "owner": {
+        "run_id": "b2be34ac70e244cd9330fe7859756908",
+        "context_id": "62b75e1adca4465d875863c8da802e14"
+      },
+      "sequence": 2,
+      "started_ns": 1793244473030381100,
+      "committed_ns": 1793244473100325700
+    },
+    {
+      "owner": {
+        "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+        "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+      },
+      "sequence": 1,
+      "started_ns": 1793244485934767900,
+      "committed_ns": 1793244486080956800
+    },
+    {
+      "owner": {
+        "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+        "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+      },
+      "sequence": 3,
+      "started_ns": 1793244485934767900,
+      "committed_ns": 1793244486080956800
+    },
+    {
+      "owner": {
+        "run_id": "add7c85be46840ef8f6f6304a838d9c5",
+        "context_id": "6f6a3afab2214365ab4f8dadd06c999f"
+      },
+      "sequence": 4,
+      "started_ns": 1793244492055427300,
+      "committed_ns": 1793244492143393100
+    }
+  ],
+  "shutdown_errors": [],
+  "shutdown_ms": 91.8722,
+  "trial_wall_start_ns": 1793244459567459700
+}

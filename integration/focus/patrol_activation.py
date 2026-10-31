@@ -10,6 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import uuid
 import time
+from contextlib import contextmanager
 
 from langchain.agents.middleware.types import ModelRequest
 from langchain.tools import tool
@@ -104,6 +105,19 @@ class PatrolHarness:
                 self.trace({"kind": kind, "time_ns": time.time_ns(), **fields})
             except Exception:
                 pass
+
+    @contextmanager
+    def phase(self, name, **identity):
+        started, monotonic = time.time_ns(), time.perf_counter_ns()
+        detail = {}
+        try:
+            yield detail
+        except BaseException as error:
+            detail["error_type"] = type(error).__name__
+            raise
+        finally:
+            self.emit("patrol_phase", phase=name, started_ns=started, finished_ns=time.time_ns(),
+                elapsed_ns=time.perf_counter_ns() - monotonic, **identity, **detail)
 
     def security(self, owner, run_id, equipment=None):
         root = Path(owner["activation_root"])
@@ -319,25 +333,57 @@ class PatrolHarness:
                 await asyncio.sleep(0.05)
 
     async def schedule_many(self, owners):
+        schedule_id = uuid.uuid4().hex
+        with self.phase("schedule_total", schedule_id=schedule_id, loop_id=owners[0]["loop_id"],
+                        context_ids=[owner["context_id"] for owner in owners]):
+            return await self._schedule_many(owners, schedule_id)
+
+    async def _schedule_many(self, owners, schedule_id):
         owner = owners[0]
         if any(item["loop_id"] != owner["loop_id"] for item in owners):
             raise ValueError("one Patrol decision must belong to one Loop")
         # Publish actual task-memory work with a deterministic evidence-preserving
         # provider, then freeze the real bounded observation for PortfolioPatrol.
-        for _ in range(6):
-            while await self.progress.drain(loop_id=owner["loop_id"]):
-                pass
-            await self.coordinator.maintain_rounds()
-            async with self.sessions() as session:
-                current_loop = await session.get(AgentLoop, owner["loop_id"])
-                current_round = await session.get(LoopRound, current_loop.current_round_id)
-                if current_round.status != "settled":
+        identity = {"schedule_id": schedule_id, "loop_id": owner["loop_id"],
+                    "context_ids": [item["context_id"] for item in owners]}
+        calls, work = 0, 0
+        for iteration in range(1, 7):
+            while True:
+                calls += 1
+                with self.phase("task_progress", **identity, iteration=iteration, call=calls) as detail:
+                    processed = await self.progress.drain(loop_id=owner["loop_id"])
+                    detail["work_items"] = processed
+                work += processed
+                if not processed:
                     break
-        async with self.sessions() as session:
-            loop = await session.get(AgentLoop, owner["loop_id"])
-            round_id = loop.current_round_id
-        observation = await LoopObservationService(self.sessions, self.saver).capture(owner["loop_id"], round_id)
-        claim = await self.coordinator.claim_for_loop(owner["loop_id"], "local-patrol")
+            with self.phase("round_maintenance", **identity, iteration=iteration):
+                await self.coordinator.maintain_rounds()
+            with self.phase("round_state_read", **identity, iteration=iteration):
+                async with self.sessions() as session:
+                    current_loop = await session.get(AgentLoop, owner["loop_id"])
+                    current_round = await session.get(LoopRound, current_loop.current_round_id)
+                    if current_round.status != "settled":
+                        break
+        self.emit("patrol_loops", **identity, round_iterations=iteration,
+                  progress_drain_calls=calls, progress_work_items=work)
+        if current_round.status == "settled":
+            # Finite tools can make two Loops turn over concurrently. Never
+            # capture the already-committed observation of a settled old Round.
+            self.emit("patrol_deferred", **identity, reason="round_join_progress")
+            return False
+        with self.phase("round_identity_read", **identity):
+            async with self.sessions() as session:
+                loop = await session.get(AgentLoop, owner["loop_id"])
+                round_id = loop.current_round_id
+        with self.phase("observation_capture", **identity, round_id=round_id):
+            observation = await LoopObservationService(self.sessions, self.saver).capture(owner["loop_id"], round_id)
+        with self.phase("coordinator_claim", **identity, round_id=round_id):
+            claim = await self.coordinator.claim_for_loop(owner["loop_id"], "local-patrol")
+        if claim is not None and claim.round_id != round_id:
+            with self.phase("coordinator_release", **identity, round_id=claim.round_id, reason="observation_changed"):
+                await self.coordinator.release(claim)
+            self.emit("patrol_deferred", **identity, reason="observation_changed")
+            return False
         if claim is None:
             async with self.sessions() as session:
                 loop = await session.get(AgentLoop, owner["loop_id"])
@@ -364,11 +410,14 @@ class PatrolHarness:
                     for item in obs.portfolio_frontier))
 
         try:
-            proposal = await PortfolioPatrol(self.sessions, model).decide(observation, "tool-patrol", fencing_token=int(claim.fencing_token))
-            result = await LoopKernel(self.sessions, require_fencing=True).commit(proposal)
+            with self.phase("patrol_decision", **identity, round_id=round_id):
+                proposal = await PortfolioPatrol(self.sessions, model).decide(observation, "tool-patrol", fencing_token=int(claim.fencing_token))
+            with self.phase("kernel_commit", **identity, round_id=round_id):
+                result = await LoopKernel(self.sessions, require_fencing=True).commit(proposal)
             assert result.status == "committed", result
         finally:
-            await self.coordinator.release(claim)
+            with self.phase("coordinator_release", **identity, round_id=round_id):
+                await self.coordinator.release(claim)
         return True
 
     async def drain(self):

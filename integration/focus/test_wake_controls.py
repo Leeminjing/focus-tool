@@ -15,6 +15,25 @@ from unittest.mock import AsyncMock, patch
 
 
 class WakeControls(unittest.IsolatedAsyncioTestCase):
+    async def test_settled_old_round_is_deferred_before_observation_capture(self):
+        from patrol_activation import PatrolHarness, AgentLoop
+        harness = object.__new__(PatrolHarness)
+        harness.trace = None
+        harness.progress = SimpleNamespace(drain=AsyncMock(return_value=0))
+        harness.coordinator = SimpleNamespace(maintain_rounds=AsyncMock())
+        loop = SimpleNamespace(current_round_id="settled", health="progress_waiting")
+        async def get(model, identity):
+            return loop if model is AgentLoop else SimpleNamespace(status="settled")
+        class Session:
+            async def __aenter__(self):
+                return SimpleNamespace(get=get)
+            async def __aexit__(self, *args):
+                pass
+        harness.sessions = Session
+        with patch("patrol_activation.LoopObservationService", side_effect=AssertionError("stale capture")):
+            self.assertFalse(await harness.schedule_many([{"context_id": "A", "loop_id": "loop"}]))
+        self.assertEqual(harness.progress.drain.await_count, 6)
+
     async def test_transient_drain_failure_does_not_poison_future_dispatch(self):
         from patrol_driver import FocusPatrolPort
         drain = AsyncMock(side_effect=[RuntimeError("transient database failure"), 0])

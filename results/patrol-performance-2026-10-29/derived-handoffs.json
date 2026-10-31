@@ -1,0 +1,505 @@
+{
+  "derivation": "Post-collection supplement; immutable samples and traces unchanged. Same-repetition event minus barrier differences; handoffs use same-host Unix timestamps. Stage medians are not additive.",
+  "pairs": {
+    "replan": {
+      "values": [
+        {
+          "repetition": 1,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -7941.039799999999,
+            "first_body_to_quiescent_ms": -7840.216100000001,
+            "check_finished_to_effective_ms": -8331.575499999999,
+            "service_start_through_shutdown_ms": -7898.8031999999985
+          }
+        },
+        {
+          "repetition": 2,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -8538.270100000002,
+            "first_body_to_quiescent_ms": -8398.465799999998,
+            "check_finished_to_effective_ms": -7978.8377,
+            "service_start_through_shutdown_ms": -8542.306799999998
+          }
+        },
+        {
+          "repetition": 3,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -3775.268399999999,
+            "first_body_to_quiescent_ms": -3668.2055,
+            "check_finished_to_effective_ms": -5672.697,
+            "service_start_through_shutdown_ms": -3728.139000000001
+          }
+        },
+        {
+          "repetition": 4,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -11992.585299999999,
+            "first_body_to_quiescent_ms": -10694.551900000002,
+            "check_finished_to_effective_ms": -11111.767399999999,
+            "service_start_through_shutdown_ms": -12053.3606
+          }
+        },
+        {
+          "repetition": 5,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -11793.7647,
+            "first_body_to_quiescent_ms": -11921.689699999999,
+            "check_finished_to_effective_ms": -12756.888099999998,
+            "service_start_through_shutdown_ms": -11804.417800000003
+          }
+        },
+        {
+          "repetition": 6,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -10325.514900000002,
+            "first_body_to_quiescent_ms": -10114.4409,
+            "check_finished_to_effective_ms": -12056.357899999999,
+            "service_start_through_shutdown_ms": -10305.698
+          }
+        },
+        {
+          "repetition": 7,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -12200.3733,
+            "first_body_to_quiescent_ms": -12331.9794,
+            "check_finished_to_effective_ms": -12500.2096,
+            "service_start_through_shutdown_ms": -12215.4682
+          }
+        },
+        {
+          "repetition": 8,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 916.1074000000008,
+            "first_body_to_quiescent_ms": -1213.983900000001,
+            "check_finished_to_effective_ms": -3226.5751,
+            "service_start_through_shutdown_ms": 921.8791999999994
+          }
+        },
+        {
+          "repetition": 9,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -4890.8604,
+            "first_body_to_quiescent_ms": -4695.641299999999,
+            "check_finished_to_effective_ms": -5683.982,
+            "service_start_through_shutdown_ms": -4884.052600000001
+          }
+        },
+        {
+          "repetition": 10,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -7171.424600000002,
+            "first_body_to_quiescent_ms": -7455.4726,
+            "check_finished_to_effective_ms": -6981.3698,
+            "service_start_through_shutdown_ms": -7160.4573
+          }
+        }
+      ],
+      "median_event_minus_barrier_ms": {
+        "service_start_to_quiescent_ms": -8239.65495,
+        "first_body_to_quiescent_ms": -8119.34095,
+        "check_finished_to_effective_ms": -8155.2065999999995,
+        "service_start_through_shutdown_ms": -8220.554999999998
+      }
+    },
+    "necessary": {
+      "values": [
+        {
+          "repetition": 1,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -214.176300000001,
+            "first_body_to_quiescent_ms": -333.1905999999999,
+            "check_finished_to_effective_ms": -152.39400000000023,
+            "service_start_through_shutdown_ms": -221.90320000000065
+          }
+        },
+        {
+          "repetition": 2,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -154.92200000000048,
+            "first_body_to_quiescent_ms": -273.3572000000004,
+            "check_finished_to_effective_ms": -287.4490999999998,
+            "service_start_through_shutdown_ms": -164.03920000000107
+          }
+        },
+        {
+          "repetition": 3,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 1477.7898999999998,
+            "first_body_to_quiescent_ms": 510.68369999999777,
+            "check_finished_to_effective_ms": 538.7518999999993,
+            "service_start_through_shutdown_ms": 1516.9461999999985
+          }
+        },
+        {
+          "repetition": 4,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 9374.057900000002,
+            "first_body_to_quiescent_ms": 6481.103500000001,
+            "check_finished_to_effective_ms": 6385.571100000001,
+            "service_start_through_shutdown_ms": 9355.084299999999
+          }
+        },
+        {
+          "repetition": 5,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 965.9808999999987,
+            "first_body_to_quiescent_ms": 253.46600000000035,
+            "check_finished_to_effective_ms": 373.5463000000018,
+            "service_start_through_shutdown_ms": 936.8128999999972
+          }
+        },
+        {
+          "repetition": 6,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 1560.5385000000024,
+            "first_body_to_quiescent_ms": 291.5158999999985,
+            "check_finished_to_effective_ms": 545.5275999999976,
+            "service_start_through_shutdown_ms": 1550.1702000000005
+          }
+        },
+        {
+          "repetition": 7,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -511.08580000000075,
+            "first_body_to_quiescent_ms": -397.58190000000104,
+            "check_finished_to_effective_ms": -183.16139999999723,
+            "service_start_through_shutdown_ms": -503.4896000000008
+          }
+        },
+        {
+          "repetition": 8,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 709.0222000000031,
+            "first_body_to_quiescent_ms": 145.1211000000003,
+            "check_finished_to_effective_ms": 552.8297999999995,
+            "service_start_through_shutdown_ms": 637.1651999999995
+          }
+        },
+        {
+          "repetition": 9,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": -315.6795000000002,
+            "first_body_to_quiescent_ms": -377.48779999999897,
+            "check_finished_to_effective_ms": -196.08630000000085,
+            "service_start_through_shutdown_ms": -341.95859999999993
+          }
+        },
+        {
+          "repetition": 10,
+          "event_minus_barrier_ms": {
+            "service_start_to_quiescent_ms": 601.6834999999992,
+            "first_body_to_quiescent_ms": 658.5949999999993,
+            "check_finished_to_effective_ms": 166.6797999999999,
+            "service_start_through_shutdown_ms": 603.0131000000001
+          }
+        }
+      ],
+      "median_event_minus_barrier_ms": {
+        "service_start_to_quiescent_ms": 655.3528500000011,
+        "first_body_to_quiescent_ms": 199.29355000000032,
+        "check_finished_to_effective_ms": 270.11305000000084,
+        "service_start_through_shutdown_ms": 620.0891499999998
+      }
+    }
+  },
+  "handoffs": {
+    "barrier": {
+      "tool_to_inbox": 36.8153,
+      "inbox_to_patrol_start": 8369.219799999999,
+      "patrol_start_to_commit": 2303.6127500000002,
+      "commit_to_activation": 509.13259999999997,
+      "activation_to_repair": 663.9936,
+      "tool_to_repair": 11667.00885
+    },
+    "event": {
+      "tool_to_inbox": 46.3123,
+      "inbox_to_patrol_start": 937.8931,
+      "patrol_start_to_commit": 3516.0819,
+      "commit_to_activation": 894.76775,
+      "activation_to_repair": 984.42065,
+      "tool_to_repair": 6229.3761
+    }
+  },
+  "samples": [
+    {
+      "sample": "004-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 1,
+      "trace_sha256": "62ab8c72293076cf365cf7f95b3cb4b9ca907c1098336cc191c4cbcc99e084b6",
+      "handoffs_ms": {
+        "tool_to_inbox": 19.7735,
+        "inbox_to_patrol_start": 8379.1085,
+        "patrol_start_to_commit": 2492.4097,
+        "commit_to_activation": 374.8023,
+        "activation_to_repair": 504.1131,
+        "tool_to_repair": 11770.2071
+      }
+    },
+    {
+      "sample": "005-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 1,
+      "trace_sha256": "5d9a3b4cccd3b8d9268d4c11b65e9534f0dc5b6d9f584feb1adfefb913fa83de",
+      "handoffs_ms": {
+        "tool_to_inbox": 20.7925,
+        "inbox_to_patrol_start": 439.9152,
+        "patrol_start_to_commit": 2047.8556,
+        "commit_to_activation": 411.0802,
+        "activation_to_repair": 518.9881,
+        "tool_to_repair": 3438.6316
+      }
+    },
+    {
+      "sample": "010-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 2,
+      "trace_sha256": "7b546646043ac24ea1fff6db431a0865e55cd8ccaf61e38932fe6d32cc8e2e3a",
+      "handoffs_ms": {
+        "tool_to_inbox": 25.0752,
+        "inbox_to_patrol_start": 440.504,
+        "patrol_start_to_commit": 1801.0068,
+        "commit_to_activation": 494.4555,
+        "activation_to_repair": 543.2018,
+        "tool_to_repair": 3304.2433
+      }
+    },
+    {
+      "sample": "011-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 2,
+      "trace_sha256": "37cc96c3bfe14475ce0e63ee3acdb9a94cb6d1e901098a2a03771a8f5506ea86",
+      "handoffs_ms": {
+        "tool_to_inbox": 22.2512,
+        "inbox_to_patrol_start": 8280.8754,
+        "patrol_start_to_commit": 2056.6041,
+        "commit_to_activation": 414.9138,
+        "activation_to_repair": 508.4365,
+        "tool_to_repair": 11283.081
+      }
+    },
+    {
+      "sample": "012-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 3,
+      "trace_sha256": "200cd613712f8afbcc3a9c94e52e99d6432576653da7c16ac667e60cbefa995d",
+      "handoffs_ms": {
+        "tool_to_inbox": 21.1429,
+        "inbox_to_patrol_start": 8359.3311,
+        "patrol_start_to_commit": 2046.8284,
+        "commit_to_activation": 394.1163,
+        "activation_to_repair": 496.7587,
+        "tool_to_repair": 11318.1774
+      }
+    },
+    {
+      "sample": "013-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 3,
+      "trace_sha256": "a2754ca3b50143712dd7f2c2a34a561ce654f4061f28cc6568429345e2f07dff",
+      "handoffs_ms": {
+        "tool_to_inbox": 32.9212,
+        "inbox_to_patrol_start": 307.6978,
+        "patrol_start_to_commit": 3362.0321,
+        "commit_to_activation": 798.9389,
+        "activation_to_repair": 1143.8904,
+        "tool_to_repair": 5645.4804
+      }
+    },
+    {
+      "sample": "018-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 4,
+      "trace_sha256": "8d98b9e441cdfd3fe4be90ab1e9e0fbde96e25e86d97278eaac22c5c839cf321",
+      "handoffs_ms": {
+        "tool_to_inbox": 47.4973,
+        "inbox_to_patrol_start": 1323.2418,
+        "patrol_start_to_commit": 4532.3668,
+        "commit_to_activation": 1087.0797,
+        "activation_to_repair": 1312.7986,
+        "tool_to_repair": 8302.9842
+      }
+    },
+    {
+      "sample": "019-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 4,
+      "trace_sha256": "6ca853c99d8adce6ff1776db69dc61617a2a65fd510fc00a9ac12910281ffae4",
+      "handoffs_ms": {
+        "tool_to_inbox": 76.8681,
+        "inbox_to_patrol_start": 14051.0334,
+        "patrol_start_to_commit": 3608.2991,
+        "commit_to_activation": 756.5009,
+        "activation_to_repair": 922.0501,
+        "tool_to_repair": 19414.7516
+      }
+    },
+    {
+      "sample": "020-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 5,
+      "trace_sha256": "b81775f759dbfec8cb006de3e923a9b2545fe68053514644e268d06d4fb26535",
+      "handoffs_ms": {
+        "tool_to_inbox": 64.3534,
+        "inbox_to_patrol_start": 14668.4997,
+        "patrol_start_to_commit": 3291.85,
+        "commit_to_activation": 768.7191,
+        "activation_to_repair": 776.7377,
+        "tool_to_repair": 19570.1599
+      }
+    },
+    {
+      "sample": "021-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 5,
+      "trace_sha256": "5399e2a4e67d05d817fa4ad8db06b37294efc5391fe4131dbde97d5decbe1f68",
+      "handoffs_ms": {
+        "tool_to_inbox": 45.1273,
+        "inbox_to_patrol_start": 995.7316,
+        "patrol_start_to_commit": 3670.1317,
+        "commit_to_activation": 1177.203,
+        "activation_to_repair": 925.0782,
+        "tool_to_repair": 6813.2718
+      }
+    },
+    {
+      "sample": "026-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 6,
+      "trace_sha256": "8403c81016636193f47040a30f7230a3a34764269e28e233e38e3ac373f6d7de",
+      "handoffs_ms": {
+        "tool_to_inbox": 62.5933,
+        "inbox_to_patrol_start": 1124.2498,
+        "patrol_start_to_commit": 4781.4897,
+        "commit_to_activation": 990.5966,
+        "activation_to_repair": 1043.7631,
+        "tool_to_repair": 8002.6925
+      }
+    },
+    {
+      "sample": "027-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 6,
+      "trace_sha256": "cb36415d389f563cb7a32e15fceb3d5576afbac6f177b045e3736c804ff236ef",
+      "handoffs_ms": {
+        "tool_to_inbox": 103.7292,
+        "inbox_to_patrol_start": 14245.8671,
+        "patrol_start_to_commit": 3913.8999,
+        "commit_to_activation": 897.3257,
+        "activation_to_repair": 898.2285,
+        "tool_to_repair": 20059.0504
+      }
+    },
+    {
+      "sample": "028-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 7,
+      "trace_sha256": "6cfafd9a10ff43deea9a9772467ba95db15f0dfb9cb3af059986c7baa72a418c",
+      "handoffs_ms": {
+        "tool_to_inbox": 55.343,
+        "inbox_to_patrol_start": 13981.9724,
+        "patrol_start_to_commit": 3893.3044,
+        "commit_to_activation": 995.5172,
+        "activation_to_repair": 886.1166,
+        "tool_to_repair": 19812.2536
+      }
+    },
+    {
+      "sample": "029-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 7,
+      "trace_sha256": "da34da1bc0f2120652f5b823ccf5a8f078b599330582f04f7a7880d812ddb586",
+      "handoffs_ms": {
+        "tool_to_inbox": 69.7908,
+        "inbox_to_patrol_start": 880.0546,
+        "patrol_start_to_commit": 4094.7758,
+        "commit_to_activation": 1163.3017,
+        "activation_to_repair": 1104.1211,
+        "tool_to_repair": 7312.044
+      }
+    },
+    {
+      "sample": "034-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 8,
+      "trace_sha256": "c59e91836096399b3a0be32a6b13600bdc0e63bef9767961d49ef6b5aa6df76b",
+      "handoffs_ms": {
+        "tool_to_inbox": 81.4662,
+        "inbox_to_patrol_start": 1438.382,
+        "patrol_start_to_commit": 4609.9667,
+        "commit_to_activation": 1011.3428,
+        "activation_to_repair": 1130.4999,
+        "tool_to_repair": 8271.6576
+      }
+    },
+    {
+      "sample": "035-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 8,
+      "trace_sha256": "68c5c61e8eb68a387002e7070d59f6b17b26d49c6f89357dcd32d27086013756",
+      "handoffs_ms": {
+        "tool_to_inbox": 24.5075,
+        "inbox_to_patrol_start": 8233.0491,
+        "patrol_start_to_commit": 2114.8158,
+        "commit_to_activation": 454.5336,
+        "activation_to_repair": 671.3267,
+        "tool_to_repair": 11498.2327
+      }
+    },
+    {
+      "sample": "036-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 9,
+      "trace_sha256": "db812b3cb1ab44bac3b3396de6b85675428b3402b237b450025823b35d1793aa",
+      "handoffs_ms": {
+        "tool_to_inbox": 43.2306,
+        "inbox_to_patrol_start": 8227.8368,
+        "patrol_start_to_commit": 1870.0293,
+        "commit_to_activation": 497.8796,
+        "activation_to_repair": 628.1238,
+        "tool_to_repair": 11267.1001
+      }
+    },
+    {
+      "sample": "037-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 9,
+      "trace_sha256": "1cecfd1b371f528ddb3ad0f15281abf29fcd51abc764ad3da7d779ef2e2416f0",
+      "handoffs_ms": {
+        "tool_to_inbox": 99.9714,
+        "inbox_to_patrol_start": 1106.426,
+        "patrol_start_to_commit": 3046.6273,
+        "commit_to_activation": 548.9491,
+        "activation_to_repair": 781.1443,
+        "tool_to_repair": 5583.1181
+      }
+    },
+    {
+      "sample": "042-sample-replan-event.json",
+      "mode": "event",
+      "repetition": 10,
+      "trace_sha256": "b87b7e7981dd796c14268bc8611619610c4f43ac353c070a98927b96ad43a64e",
+      "handoffs_ms": {
+        "tool_to_inbox": 31.9396,
+        "inbox_to_patrol_start": 550.8383,
+        "patrol_start_to_commit": 2754.5222,
+        "commit_to_activation": 583.814,
+        "activation_to_repair": 661.3267,
+        "tool_to_repair": 4582.4408
+      }
+    },
+    {
+      "sample": "043-sample-replan-barrier.json",
+      "mode": "barrier",
+      "repetition": 10,
+      "trace_sha256": "91e92d4db8bbcd66e622e7f5f325f5048c84e3b29850e4f8d535975017aecd0d",
+      "handoffs_ms": {
+        "tool_to_inbox": 30.4,
+        "inbox_to_patrol_start": 8356.0342,
+        "patrol_start_to_commit": 2000.3303,
+        "commit_to_activation": 520.3856,
+        "activation_to_repair": 656.6605,
+        "tool_to_repair": 11563.8106
+      }
+    }
+  ]
+}

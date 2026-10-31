@@ -1,0 +1,38 @@
+{
+  "mode": "event",
+  "scenario": "replan",
+  "passed": false,
+  "setup_ms": 5126.1946,
+  "input_sha256": {
+    "A": {
+      "input.json": "860dd8ce7240d261bf0c4e641525d5215a892022979e521f5cd52f1de57e37e5",
+      "workload.json": "4f720e862c4022d015116a398afd82ef0bd6f91632773894b8abceb7535ad707",
+      "corpus.bin": "190ab3f50bee44b6324a28ff7785b2b341df9b2ca5aa7deacf48809da31e6c35"
+    },
+    "B": {
+      "input.json": "ddd5ce1da41ae56c1b7eb63cc93bcdbdc544d4469c22815fa722c69458ece403",
+      "workload.json": "8ca1e766325415b1dde8cccbd6104945ec1558343e84c8b6d374c12a104fca62",
+      "corpus.bin": "7ce214319afac6d2e35079a3a3ebbb6b4001435a213504ac102777830d0b3a33"
+    }
+  },
+  "owners": {
+    "A": "50fc6e361821464abd292d4f3e4f27b1",
+    "B": "15831ab6c8b44b608c54f7efde18accb"
+  },
+  "original_batches": {
+    "50fc6e361821464abd292d4f3e4f27b1": [
+      "1063afe9b03bb8a1eb72bdc293f590bee17dcb504e2aa07afae6c9aad88fd47a",
+      "16cd29647fbea6b601ca06c599a357142f792fb2625afd6a78d81842903da56b"
+    ],
+    "15831ab6c8b44b608c54f7efde18accb": [
+      "7f1b9eb7d2a1c6c8946fe732941f20680ee16daaccb651bbaddab122809c149a"
+    ]
+  },
+  "error": "RuntimeError({'wake': 'Patrol observation 已被替换或提交', 'owners': {}})",
+  "shutdown_errors": [],
+  "shutdown_ms": 154.8776,
+  "trial_wall_start_ns": 1793242054202304600,
+  "metrics": {
+    "service_start_through_shutdown_ms": 8710.9491
+  }
+}
