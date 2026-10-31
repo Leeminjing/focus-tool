@@ -29,22 +29,24 @@ func (w *writer) send(value any) error {
 }
 
 type request struct {
-	ID         uint64              `json:"id"`
-	Method     string              `json:"method"`
-	Owner      tool.Owner          `json:"owner"`
-	Revision   int                 `json:"revision"`
-	Task       tool.Task           `json:"task"`
-	TaskID     string              `json:"task_id"`
-	After      uint64              `json:"after"`
-	Sequence   uint64              `json:"sequence"`
-	Token      uint64              `json:"token"`
-	Allowed    bool                `json:"allowed"`
-	Reason     string              `json:"reason"`
-	Collect    bool                `json:"collect"`
-	Cursor     string              `json:"cursor"`
-	Limit      int                 `json:"limit"`
-	MaxBytes   int                 `json:"max_bytes"`
-	Registered []tool.TaskIdentity `json:"registered"`
+	ID          uint64              `json:"id"`
+	Method      string              `json:"method"`
+	Owner       tool.Owner          `json:"owner"`
+	Revision    int                 `json:"revision"`
+	Task        tool.Task           `json:"task"`
+	TaskID      string              `json:"task_id"`
+	After       uint64              `json:"after"`
+	Sequence    uint64              `json:"sequence"`
+	Token       uint64              `json:"token"`
+	Allowed     bool                `json:"allowed"`
+	Reason      string              `json:"reason"`
+	Collect     bool                `json:"collect"`
+	Cursor      string              `json:"cursor"`
+	Limit       int                 `json:"limit"`
+	MaxBytes    int                 `json:"max_bytes"`
+	Registered  []tool.TaskIdentity `json:"registered"`
+	ExecutionID string              `json:"execution_id"`
+	Result      tool.Result         `json:"result"`
 }
 
 type approvals struct {
@@ -119,6 +121,7 @@ func serve() (serveError error) {
 	tracePath := flag.String("trace", "", "optional fresh diagnostic JSONL path; buffered, not execution facts")
 	pythonWorkers := flag.Int("python-workers", 0, "bounded persistent workers for registered reuse-eligible Python tools; 0 keeps fresh processes")
 	workerTasks := flag.Int("python-worker-tasks", 256, "maximum successful calls before recycling a Python worker")
+	hostCleanup := flag.Duration("host-cleanup-timeout", 5*time.Second, "wait for host cleanup receipt before fencing unknown")
 	flag.Parse()
 	if *approvalTimeout <= 0 {
 		return fmt.Errorf("approval timeout must be positive")
@@ -133,8 +136,14 @@ func serve() (serveError error) {
 		}
 	}()
 	out := &writer{encoder: json.NewEncoder(os.Stdout)}
+	host, err := tool.NewHostExecutor(func(frame tool.HostRequest) error { return out.send(frame) }, *hostCleanup)
+	if err != nil {
+		return err
+	}
+	defer host.Disconnect()
 	gates := &approvals{waiting: map[uint64]chan string{}, out: out, timeout: *approvalTimeout}
 	config := tool.Config{Concurrency: *concurrency, Capacity: *capacity, Journal: *journal, Executors: map[string]tool.Executor{"process": tool.ProcessExecutor{}, "python": tool.PythonExecutor{}}}
+	config.Executors["host"] = host
 	if *pythonWorkers < 0 {
 		return fmt.Errorf("negative Python worker bound")
 	}
@@ -188,10 +197,37 @@ func serve() (serveError error) {
 	}()
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 4096), 4<<20)
-	for scanner.Scan() {
+	input := make(chan []byte)
+	scanError := make(chan error, 1)
+	go func() {
+		defer close(input)
+		for scanner.Scan() {
+			line := append([]byte(nil), scanner.Bytes()...)
+			select {
+			case input <- line:
+			case <-pumpCtx.Done():
+				return
+			}
+		}
+		scanError <- scanner.Err()
+	}()
+	closed := make(chan error, 1)
+	closing := false
+	for {
+		var line []byte
+		select {
+		case result := <-closed:
+			return result
+		case data, ok := <-input:
+			if !ok {
+				host.Disconnect()
+				return <-scanError
+			}
+			line = data
+		}
 		started := time.Now()
 		var req request
-		if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
+		if err := json.Unmarshal(line, &req); err != nil {
 			return fmt.Errorf("invalid request: %w", err)
 		}
 		var value any
@@ -238,13 +274,30 @@ func serve() (serveError error) {
 			}
 		case "authorize":
 			err = gates.answer(req)
+		case "host_complete":
+			err = host.Complete(req.ExecutionID, req.Owner, req.TaskID, req.Result)
 		case "close":
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			err = engine.Close(ctx)
-			cancel()
-			if err == nil {
-				value = engine.Stats()
+			if closing {
+				err = fmt.Errorf("close already in progress")
+				break
 			}
+			closing = true
+			// Keep reading host receipts while Close waits for executing tools.
+			go func(id uint64) {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				err := engine.Close(ctx)
+				response := map[string]any{"type": "response", "id": id, "result": engine.Stats()}
+				if err != nil {
+					response["error"] = err.Error()
+					response["error_code"] = "rejected"
+				}
+				if writeErr := out.send(response); writeErr != nil {
+					err = writeErr
+				}
+				closed <- err
+			}(req.ID)
+			continue
 		default:
 			err = fmt.Errorf("unknown method %q", req.Method)
 		}
@@ -260,11 +313,7 @@ func serve() (serveError error) {
 			return writeErr
 		}
 		serverSpan(trace, "server_request", req, started)
-		if req.Method == "close" {
-			return err
-		}
 	}
-	return scanner.Err()
 }
 
 func main() {

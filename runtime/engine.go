@@ -316,8 +316,12 @@ func (e *Engine) OpenRun(owner Owner, revision int) error {
 }
 
 func (e *Engine) Submit(task Task) (Status, error) {
-	if _, err := json.Marshal(task); err != nil {
+	encoded, err := json.Marshal(task)
+	if err != nil {
 		return Status{}, fmt.Errorf("invalid task JSON: %w", err)
+	}
+	if task.Kind == "host" && len(encoded) > 1<<20 {
+		return Status{}, fmt.Errorf("host task exceeds 1 MiB; result pages must remain bounded")
 	}
 	task = clone(task)
 	defer e.lock("submit", task.Owner, task.ID)()
@@ -397,6 +401,9 @@ func (e *Engine) Submit(task Task) (Status, error) {
 	}
 	if task.Kind == "python" && (task.Python == nil || task.Python.Interpreter == "" || task.Python.Module == "" || task.Python.Function == "") {
 		return Status{}, fmt.Errorf("incomplete Python call")
+	}
+	if task.Kind == "host" && (task.Host == nil || task.Host.Tool == "" || task.Host.Args == nil || task.Python != nil || len(task.Command) > 0) {
+		return Status{}, fmt.Errorf("incomplete host call")
 	}
 	status := Status{Task: task, State: "queued", Timing: Timing{QueuedNS: time.Now().UnixNano()}}
 	if err := e.save(record{Task: &status}); err != nil {
@@ -818,6 +825,9 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			result = Result{State: "failed", Error: fmt.Sprint("executor panic: ", recovered)}
+			if task.Kind == "host" {
+				result.State = "unknown"
+			}
 		}
 		returned := time.Now()
 		e.finished <- finished{key: key, result: result, owner: task.Owner, id: task.ID, returned: returned}
@@ -854,8 +864,14 @@ func (e *Engine) execute(ctx context.Context, key string, task Task) {
 		return
 	}
 	result = executor.Execute(ctx, task)
-	if !terminal(result.State) || result.State == "unknown" || result.State == "skipped" {
+	if task.Kind == "host" {
+		result = validateHostResult(result)
+	}
+	if !terminal(result.State) || result.State == "skipped" {
 		result = Result{State: "failed", Error: "executor returned invalid terminal state"}
+		if task.Kind == "host" {
+			result.State = "unknown"
+		}
 	}
 }
 

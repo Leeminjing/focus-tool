@@ -31,7 +31,11 @@ python integration/focus/benchmark_patrol.py --analyze results/local/patrol-perf
 
 输出目录必须不存在。原始数据保留阶段调用、循环次数、产物读回、取消终态、typed checkpoint／回执和全部样本；失败不替换成成功样本。详见 [测量合同](../../docs/patrol-performance-method.md) 和 [实测报告](../../docs/patrol-performance-results.md)。
 
-追加 `--task-progress-probe` 可观测固定版本 Focus 原生 TaskProgress 内部方法、accounting view、SQL 执行及 DBAPI commit 返回。默认不安装，所有 wrapper／监听器在服务关闭后恢复，不维护第二份业务实现。领取、预算预留、用量回填、校验和发布继续执行原方法；父子 inclusive 时间不能相加。详见 [探针方法](../../docs/task-progress-probe-method.md)／[定位结果](../../docs/task-progress-probe-results.md)。
+## 最新 Focus 原生 Shell 宿主
+
+新的 `host_shell.py`／`test_host_shell.py` 固定 Focus `0349f562`，原生 ToolRuntime、权限中间件、工具账本与 Shell 后端在宿主执行，Go 负责统一调度和耐久生命周期。使用 [Host Tool 合同](../../docs/host-executor.md) 中的单独命令；旧环境若缺少最新 Focus 声明的 context-index 依赖，应复用锁定的 `af8e656` 检出，不能退回旧 Focus 或用 stub 冒充新版验收。
+
+本轮不将路由直接塞入 `make_lead_agent` 默认链路，不重复工具 claim。旧桥接、自动唤醒、checkpoint 与恢复用例继续保留，下述旧版本范围不扩展为最新原生工具接入成功。
 
 ## Patrol 跨激活接入（2026-10-29）
 

@@ -39,6 +39,19 @@ type PythonCall struct {
 	Reuse       bool                       `json:"reuse,omitempty"` // Trusted registration metadata, never a tool argument.
 }
 
+// HostCall names a trusted registration in the connected ToolRuntime owner.
+// Context, credentials and framework objects never cross the protocol.
+type HostCall struct {
+	Tool string                     `json:"tool"`
+	Args map[string]json.RawMessage `json:"args"`
+}
+
+type HostReceipt struct {
+	ProcessCleanup string          `json:"process_cleanup"` // confirmed, not_started, unknown
+	ToolMessage    json.RawMessage `json:"tool_message,omitempty"`
+	Facts          json.RawMessage `json:"facts,omitempty"`
+}
+
 type Task struct {
 	ID           string             `json:"id"`
 	Owner        Owner              `json:"owner"`
@@ -46,6 +59,7 @@ type Task struct {
 	Kind         string             `json:"kind"`
 	Command      []string           `json:"command,omitempty"`
 	Python       *PythonCall        `json:"python,omitempty"`
+	Host         *HostCall          `json:"host,omitempty"`
 	Directory    string             `json:"directory,omitempty"`
 	Dependencies []string           `json:"dependencies,omitempty"`
 	Bindings     map[string]Binding `json:"bindings,omitempty"`
@@ -54,10 +68,11 @@ type Task struct {
 }
 
 type Result struct {
-	State  string `json:"state"`
-	Output string `json:"output,omitempty"`
-	Error  string `json:"error,omitempty"`
-	PID    int    `json:"pid,omitempty"`
+	State  string       `json:"state"`
+	Output string       `json:"output,omitempty"`
+	Error  string       `json:"error,omitempty"`
+	PID    int          `json:"pid,omitempty"`
+	Host   *HostReceipt `json:"host,omitempty"`
 }
 
 type Completion struct {

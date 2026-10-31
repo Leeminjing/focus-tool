@@ -54,6 +54,8 @@ class RuntimeClient:
         self.on_run_closed = None
         self._closed = asyncio.Event()
         self._authorization_tasks = set()
+        self.host_execute = None
+        self._host_tasks = {}
         self.stderr = bytearray()
         self._reader = asyncio.create_task(self._read())
         self._stderr_reader = asyncio.create_task(self._read_stderr())
@@ -90,6 +92,8 @@ class RuntimeClient:
         self._serial += 1
         identity = self._serial
         frame = json.dumps({"id": identity, "method": method, **fields}, allow_nan=False).encode() + b"\n"
+        if len(frame) > 4 << 20:
+            raise RemoteRejected("request exceeds 4 MiB; not sent")
         future = asyncio.get_running_loop().create_future()
         self._pending[identity] = future
         try:
@@ -140,15 +144,60 @@ class RuntimeClient:
                     task = asyncio.create_task(self._answer_authorization(frame))
                     self._authorization_tasks.add(task)
                     task.add_done_callback(self._authorization_tasks.discard)
+                elif frame["type"] == "host_execute":
+                    identity = frame["execution_id"]
+                    if identity not in self._host_tasks:
+                        cancel = asyncio.Event()
+                        task = asyncio.create_task(self._answer_host(frame, cancel))
+                        self._host_tasks[identity] = (task, cancel)
+                        task.add_done_callback(lambda done, identity=identity: self._host_tasks.pop(identity, None))
+                elif frame["type"] == "host_cancel":
+                    pending = self._host_tasks.get(frame["execution_id"])
+                    if pending:
+                        pending[1].set()
                 else:
                     raise RuntimeError("unknown runtime frame")
         except Exception as error:
             failure = str(error)
         finally:
             self._closed.set()
+            for _, cancel in self._host_tasks.values():
+                cancel.set()
             for future in list(self._pending.values()):
                 if not future.done():
                     future.set_exception(TransportError(failure + "; request acceptance is unknown"))
+
+    async def _answer_host(self, frame, cancel):
+        try:
+            if self.host_execute is None or not (inspect.iscoroutinefunction(self.host_execute) or
+                    inspect.iscoroutinefunction(getattr(self.host_execute, "__call__", None))):
+                result = {"state": "failed", "error": "no trusted host handler", "host": {"process_cleanup": "not_started"}}
+            else:
+                result = self.host_execute(frame["task"], cancel)
+                if inspect.isawaitable(result):
+                    result = await result
+            if not isinstance(result, dict) or any(key in result and not isinstance(result[key], str)
+                    for key in ("state", "output", "error")):
+                raise ValueError("host receipt must contain string state/output/error fields")
+            if "pid" in result and (type(result["pid"]) is not int or not 0 <= result["pid"] < 1 << 31):
+                raise ValueError("invalid host PID")
+            receipt = result.get("host")
+            if receipt is not None and (not isinstance(receipt, dict) or
+                    ("process_cleanup" in receipt and not isinstance(receipt["process_cleanup"], str))):
+                raise ValueError("invalid host cleanup receipt")
+            if len(json.dumps(result, allow_nan=False).encode()) > 1 << 20:
+                result = {"state": "unknown", "error": "host receipt exceeds 1 MiB",
+                          "host": {"process_cleanup": "unknown"}}
+        except BaseException as error:
+            # A raised exception never proves that side effects/children stopped.
+            result = {"state": "unknown", "error": type(error).__name__ + ": " + str(error)[:2048],
+                      "host": {"process_cleanup": "unknown"}}
+        task = frame["task"]
+        try:
+            await self.request("host_complete", execution_id=frame["execution_id"],
+                owner=task["owner"], task_id=task["id"], result=result)
+        except RuntimeError:
+            pass  # Expired/lost receipt: reconcile the original job, never replay.
 
     async def _answer_authorization(self, frame):
         allowed, reason = False, "no execution admission hook registered"
@@ -237,6 +286,15 @@ class RuntimeClient:
             for task in list(self._authorization_tasks):
                 task.cancel()
             await asyncio.gather(self._reader, self._stderr_reader, *self._authorization_tasks, return_exceptions=True)
+            host_tasks = list(self._host_tasks.values())
+            for _, cancel in host_tasks:
+                cancel.set()
+            if host_tasks:
+                _, pending = await asyncio.wait([task for task, _ in host_tasks], timeout=10)
+                if pending:
+                    for task in pending:
+                        task.cancel()
+                    raise TransportError("host cleanup not confirmed; runtime resources remain fenced")
             if hasattr(self.process, "close_pipes"):
                 self.process.close_pipes()
 

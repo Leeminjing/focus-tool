@@ -1,0 +1,549 @@
+{
+  "passed": true,
+  "focus_commit": "0349f562b488eb06647a1204634e067903e6132b",
+  "decision_source": "local deterministic ToolRuntime requests; no model API",
+  "cases": [
+    {
+      "case": "completed",
+      "result": {
+        "state": "completed",
+        "output": "{\"run_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"session_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"call_id\": \"shell-c61ed89b68c8478e92bdb0808addc2de\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\completed\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 0, \"failure_kind\": null, \"file_denial_observed\": false, \"stdout\": \"native host ok\\r\\n\", \"stderr\": \"\", \"output\": \"native host ok\\r\\n\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+        "host": {
+          "process_cleanup": "confirmed",
+          "tool_message": {
+            "content": "{\"run_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"session_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"call_id\": \"shell-c61ed89b68c8478e92bdb0808addc2de\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\completed\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 0, \"failure_kind\": null, \"file_denial_observed\": false, \"stdout\": \"native host ok\\r\\n\", \"stderr\": \"\", \"output\": \"native host ok\\r\\n\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "cmd",
+            "id": "tool-result:61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+            "tool_call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+            "artifact": null,
+            "status": "success"
+          },
+          "facts": {
+            "run_id": "c61ed89b68c8478e92bdb0808addc2de",
+            "session_id": "c61ed89b68c8478e92bdb0808addc2de",
+            "call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+            "agent_id": "main",
+            "mode": "danger-full-access",
+            "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\completed",
+            "mode_source": "execution-profile",
+            "backend_applied": false,
+            "enforcement": "none",
+            "status": "exited",
+            "exit_code": 0,
+            "failure_kind": null,
+            "file_denial_observed": false,
+            "stdout": "native host ok\r\n",
+            "stderr": "",
+            "output": "native host ok\r\n",
+            "truncated": false,
+            "approval_id": null,
+            "cleanup_warnings": [],
+            "process_cleanup": "confirmed",
+            "ledger_identity": "61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+            "ledger_claims": 1,
+            "ledger_completions": 1,
+            "ledger_cached": false,
+            "recovery_identity": {
+              "run_id": "c61ed89b68c8478e92bdb0808addc2de",
+              "attempt_id": "61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+              "call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+              "receipt_id": "a3098746f5c54795af6116b67b2e5a38"
+            }
+          }
+        }
+      },
+      "completion": {
+        "sequence": 1,
+        "task": {
+          "id": "51a91f7f39e70e8b8c4f993ca3a7514f9cd46e9d698fef6505c8a5f17ff53793",
+          "owner": {
+            "context_id": "c61ed89b68c8478e92bdb0808addc2de",
+            "run_id": "c61ed89b68c8478e92bdb0808addc2de"
+          },
+          "revision": 1,
+          "kind": "host",
+          "host": {
+            "tool": "native_shell_job",
+            "args": {
+              "command": "echo native host ok"
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5",
+          "resources": [
+            {
+              "name": "native-shell:global-host-effects",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "completed",
+          "output": "{\"run_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"session_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"call_id\": \"shell-c61ed89b68c8478e92bdb0808addc2de\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\completed\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 0, \"failure_kind\": null, \"file_denial_observed\": false, \"stdout\": \"native host ok\\r\\n\", \"stderr\": \"\", \"output\": \"native host ok\\r\\n\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+          "host": {
+            "process_cleanup": "confirmed",
+            "tool_message": {
+              "content": "{\"run_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"session_id\": \"c61ed89b68c8478e92bdb0808addc2de\", \"call_id\": \"shell-c61ed89b68c8478e92bdb0808addc2de\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\completed\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 0, \"failure_kind\": null, \"file_denial_observed\": false, \"stdout\": \"native host ok\\r\\n\", \"stderr\": \"\", \"output\": \"native host ok\\r\\n\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "tool",
+              "name": "cmd",
+              "id": "tool-result:61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+              "tool_call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+              "artifact": null,
+              "status": "success"
+            },
+            "facts": {
+              "run_id": "c61ed89b68c8478e92bdb0808addc2de",
+              "session_id": "c61ed89b68c8478e92bdb0808addc2de",
+              "call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+              "agent_id": "main",
+              "mode": "danger-full-access",
+              "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\completed",
+              "mode_source": "execution-profile",
+              "backend_applied": false,
+              "enforcement": "none",
+              "status": "exited",
+              "exit_code": 0,
+              "failure_kind": null,
+              "file_denial_observed": false,
+              "stdout": "native host ok\r\n",
+              "stderr": "",
+              "output": "native host ok\r\n",
+              "truncated": false,
+              "approval_id": null,
+              "cleanup_warnings": [],
+              "process_cleanup": "confirmed",
+              "ledger_identity": "61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+              "ledger_claims": 1,
+              "ledger_completions": 1,
+              "ledger_cached": false,
+              "recovery_identity": {
+                "run_id": "c61ed89b68c8478e92bdb0808addc2de",
+                "attempt_id": "61b6cccd7d2c6076e5368880031d5033e6d3d34eb248989803cc7aae69bfc1d6",
+                "call_id": "shell-c61ed89b68c8478e92bdb0808addc2de",
+                "receipt_id": "a3098746f5c54795af6116b67b2e5a38"
+              }
+            }
+          }
+        },
+        "timing": {
+          "queued_ns": 1793419705322733200,
+          "started_ns": 1793419705323289500,
+          "finished_ns": 1793419705537377900
+        }
+      },
+      "runtime_ack": true,
+      "checkpoint_id": "1f1d4e0b-852a-6a9b-bffe-e05d806693af",
+      "proof": {
+        "kind": "runner_receipt",
+        "job_drained": true,
+        "process_group_drained": null,
+        "receipt_id": "a3098746f5c54795af6116b67b2e5a38"
+      },
+      "lease_checks": 1,
+      "passed": true
+    },
+    {
+      "case": "exit_nonzero",
+      "result": {
+        "state": "failed",
+        "output": "{\"run_id\": \"3072801017d64c16b233acea37719c79\", \"session_id\": \"3072801017d64c16b233acea37719c79\", \"call_id\": \"shell-3072801017d64c16b233acea37719c79\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\exit_nonzero\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 7, \"failure_kind\": \"program_error\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+        "host": {
+          "process_cleanup": "confirmed",
+          "tool_message": {
+            "content": "{\"run_id\": \"3072801017d64c16b233acea37719c79\", \"session_id\": \"3072801017d64c16b233acea37719c79\", \"call_id\": \"shell-3072801017d64c16b233acea37719c79\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\exit_nonzero\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 7, \"failure_kind\": \"program_error\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "powershell",
+            "id": "tool-result:0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+            "tool_call_id": "shell-3072801017d64c16b233acea37719c79",
+            "artifact": null,
+            "status": "success"
+          },
+          "facts": {
+            "run_id": "3072801017d64c16b233acea37719c79",
+            "session_id": "3072801017d64c16b233acea37719c79",
+            "call_id": "shell-3072801017d64c16b233acea37719c79",
+            "agent_id": "main",
+            "mode": "danger-full-access",
+            "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\exit_nonzero",
+            "mode_source": "execution-profile",
+            "backend_applied": false,
+            "enforcement": "none",
+            "status": "exited",
+            "exit_code": 7,
+            "failure_kind": "program_error",
+            "file_denial_observed": false,
+            "stdout": "",
+            "stderr": "",
+            "output": "",
+            "truncated": false,
+            "approval_id": null,
+            "cleanup_warnings": [],
+            "process_cleanup": "confirmed",
+            "ledger_identity": "0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+            "ledger_claims": 1,
+            "ledger_completions": 1,
+            "ledger_cached": false,
+            "recovery_identity": {
+              "run_id": "3072801017d64c16b233acea37719c79",
+              "attempt_id": "0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+              "call_id": "shell-3072801017d64c16b233acea37719c79",
+              "receipt_id": "9ef94b7083da4b16835d202272b2aa36"
+            }
+          }
+        }
+      },
+      "completion": {
+        "sequence": 2,
+        "task": {
+          "id": "82028461041f0bc58cefc35de713ca9e6216dada5a63bed3185f6d1c631a9913",
+          "owner": {
+            "context_id": "3072801017d64c16b233acea37719c79",
+            "run_id": "3072801017d64c16b233acea37719c79"
+          },
+          "revision": 1,
+          "kind": "host",
+          "host": {
+            "tool": "native_shell_job",
+            "args": {
+              "command": "exit 7"
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5",
+          "resources": [
+            {
+              "name": "native-shell:global-host-effects",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "failed",
+          "output": "{\"run_id\": \"3072801017d64c16b233acea37719c79\", \"session_id\": \"3072801017d64c16b233acea37719c79\", \"call_id\": \"shell-3072801017d64c16b233acea37719c79\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\exit_nonzero\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 7, \"failure_kind\": \"program_error\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+          "host": {
+            "process_cleanup": "confirmed",
+            "tool_message": {
+              "content": "{\"run_id\": \"3072801017d64c16b233acea37719c79\", \"session_id\": \"3072801017d64c16b233acea37719c79\", \"call_id\": \"shell-3072801017d64c16b233acea37719c79\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\exit_nonzero\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"exited\", \"exit_code\": 7, \"failure_kind\": \"program_error\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "tool",
+              "name": "powershell",
+              "id": "tool-result:0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+              "tool_call_id": "shell-3072801017d64c16b233acea37719c79",
+              "artifact": null,
+              "status": "success"
+            },
+            "facts": {
+              "run_id": "3072801017d64c16b233acea37719c79",
+              "session_id": "3072801017d64c16b233acea37719c79",
+              "call_id": "shell-3072801017d64c16b233acea37719c79",
+              "agent_id": "main",
+              "mode": "danger-full-access",
+              "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\exit_nonzero",
+              "mode_source": "execution-profile",
+              "backend_applied": false,
+              "enforcement": "none",
+              "status": "exited",
+              "exit_code": 7,
+              "failure_kind": "program_error",
+              "file_denial_observed": false,
+              "stdout": "",
+              "stderr": "",
+              "output": "",
+              "truncated": false,
+              "approval_id": null,
+              "cleanup_warnings": [],
+              "process_cleanup": "confirmed",
+              "ledger_identity": "0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+              "ledger_claims": 1,
+              "ledger_completions": 1,
+              "ledger_cached": false,
+              "recovery_identity": {
+                "run_id": "3072801017d64c16b233acea37719c79",
+                "attempt_id": "0883907eb92d701dedb80d2475c17b92dabcbd7d676cd9f3556a50d08f4adf11",
+                "call_id": "shell-3072801017d64c16b233acea37719c79",
+                "receipt_id": "9ef94b7083da4b16835d202272b2aa36"
+              }
+            }
+          }
+        },
+        "timing": {
+          "queued_ns": 1793419705577593800,
+          "started_ns": 1793419705578131500,
+          "finished_ns": 1793419705876399900
+        }
+      },
+      "runtime_ack": true,
+      "checkpoint_id": "1f1d4e0b-8866-65fc-bffe-775633ac14ab",
+      "proof": {
+        "kind": "runner_receipt",
+        "job_drained": true,
+        "process_group_drained": null,
+        "receipt_id": "9ef94b7083da4b16835d202272b2aa36"
+      },
+      "lease_checks": 1,
+      "passed": true
+    },
+    {
+      "case": "cancel_tree",
+      "result": {
+        "state": "cancelled",
+        "output": "{\"run_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"session_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"call_id\": \"shell-fc4eca9e28674a438341df8c1a61505e\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\cancel_tree\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"cancelled\", \"exit_code\": null, \"failure_kind\": \"cancelled\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+        "host": {
+          "process_cleanup": "confirmed",
+          "tool_message": {
+            "content": "{\"run_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"session_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"call_id\": \"shell-fc4eca9e28674a438341df8c1a61505e\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\cancel_tree\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"cancelled\", \"exit_code\": null, \"failure_kind\": \"cancelled\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "type": "tool",
+            "name": "powershell",
+            "id": "tool-result:747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+            "tool_call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+            "artifact": null,
+            "status": "success"
+          },
+          "facts": {
+            "run_id": "fc4eca9e28674a438341df8c1a61505e",
+            "session_id": "fc4eca9e28674a438341df8c1a61505e",
+            "call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+            "agent_id": "main",
+            "mode": "danger-full-access",
+            "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\cancel_tree",
+            "mode_source": "execution-profile",
+            "backend_applied": false,
+            "enforcement": "none",
+            "status": "cancelled",
+            "exit_code": null,
+            "failure_kind": "cancelled",
+            "file_denial_observed": false,
+            "stdout": "",
+            "stderr": "",
+            "output": "",
+            "truncated": false,
+            "approval_id": null,
+            "cleanup_warnings": [],
+            "process_cleanup": "confirmed",
+            "ledger_identity": "747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+            "ledger_claims": 1,
+            "ledger_completions": 1,
+            "ledger_cached": false,
+            "recovery_identity": {
+              "run_id": "fc4eca9e28674a438341df8c1a61505e",
+              "attempt_id": "747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+              "call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+              "receipt_id": "40fbab699ba24aaf96651a1106a8e92b"
+            }
+          }
+        }
+      },
+      "completion": {
+        "sequence": 3,
+        "task": {
+          "id": "6062bc6367c02a8a7efb2bb951565f38401f23ca3a23251f44ee1d1b74afba41",
+          "owner": {
+            "context_id": "fc4eca9e28674a438341df8c1a61505e",
+            "run_id": "fc4eca9e28674a438341df8c1a61505e"
+          },
+          "revision": 1,
+          "kind": "host",
+          "host": {
+            "tool": "native_shell_job",
+            "args": {
+              "command": "& 'C:\\Users\\brubing\\.focus\\runtime\\venv\\Scripts\\python.exe' '-B' 'C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\tree.py'"
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5",
+          "resources": [
+            {
+              "name": "native-shell:global-host-effects",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "cancelled",
+          "output": "{\"run_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"session_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"call_id\": \"shell-fc4eca9e28674a438341df8c1a61505e\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\cancel_tree\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"cancelled\", \"exit_code\": null, \"failure_kind\": \"cancelled\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+          "host": {
+            "process_cleanup": "confirmed",
+            "tool_message": {
+              "content": "{\"run_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"session_id\": \"fc4eca9e28674a438341df8c1a61505e\", \"call_id\": \"shell-fc4eca9e28674a438341df8c1a61505e\", \"agent_id\": \"main\", \"mode\": \"danger-full-access\", \"workspace\": \"C:\\\\Users\\\\brubing\\\\AppData\\\\Local\\\\Temp\\\\focus-native-host-q6qy02t5\\\\cancel_tree\", \"mode_source\": \"execution-profile\", \"backend_applied\": false, \"enforcement\": \"none\", \"status\": \"cancelled\", \"exit_code\": null, \"failure_kind\": \"cancelled\", \"file_denial_observed\": false, \"stdout\": \"\", \"stderr\": \"\", \"output\": \"\", \"truncated\": false, \"approval_id\": null, \"cleanup_warnings\": [], \"process_cleanup\": \"confirmed\"}",
+              "additional_kwargs": {},
+              "response_metadata": {},
+              "type": "tool",
+              "name": "powershell",
+              "id": "tool-result:747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+              "tool_call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+              "artifact": null,
+              "status": "success"
+            },
+            "facts": {
+              "run_id": "fc4eca9e28674a438341df8c1a61505e",
+              "session_id": "fc4eca9e28674a438341df8c1a61505e",
+              "call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+              "agent_id": "main",
+              "mode": "danger-full-access",
+              "workspace": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5\\cancel_tree",
+              "mode_source": "execution-profile",
+              "backend_applied": false,
+              "enforcement": "none",
+              "status": "cancelled",
+              "exit_code": null,
+              "failure_kind": "cancelled",
+              "file_denial_observed": false,
+              "stdout": "",
+              "stderr": "",
+              "output": "",
+              "truncated": false,
+              "approval_id": null,
+              "cleanup_warnings": [],
+              "process_cleanup": "confirmed",
+              "ledger_identity": "747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+              "ledger_claims": 1,
+              "ledger_completions": 1,
+              "ledger_cached": false,
+              "recovery_identity": {
+                "run_id": "fc4eca9e28674a438341df8c1a61505e",
+                "attempt_id": "747d24157b649af22e24922d2e01479312becc9f95ce7bd2ae3d637c20e41246",
+                "call_id": "shell-fc4eca9e28674a438341df8c1a61505e",
+                "receipt_id": "40fbab699ba24aaf96651a1106a8e92b"
+              }
+            }
+          }
+        },
+        "timing": {
+          "queued_ns": 1793419705916050100,
+          "started_ns": 1793419705916593900,
+          "finished_ns": 1793419706488061900
+        }
+      },
+      "runtime_ack": true,
+      "checkpoint_id": "1f1d4e0b-8e3d-61af-bffe-0b9e727fe242",
+      "proof": {
+        "kind": "runner_receipt",
+        "job_drained": true,
+        "process_group_drained": null,
+        "receipt_id": "40fbab699ba24aaf96651a1106a8e92b"
+      },
+      "lease_checks": 1,
+      "passed": true,
+      "verified_exited_pids": [
+        16152,
+        42700
+      ]
+    },
+    {
+      "case": "revoked_while_queued",
+      "result": {
+        "state": "failed",
+        "error": "WorkspaceLeaseConflict: workspace lease 不存在、已释放或 token 无效",
+        "host": {
+          "process_cleanup": "not_started",
+          "tool_message": null,
+          "facts": {
+            "ledger_identity": "9c33d5373fbda02d6aba1b778aa1d427ec4f23d86e6fcb713f338f45ba9a8906",
+            "ledger_claims": 0,
+            "ledger_completions": 0,
+            "ledger_cached": false
+          }
+        }
+      },
+      "completion": {
+        "sequence": 4,
+        "task": {
+          "id": "06811eb8b2a03b8196f8c62344d7925abae7118dcc838aa55ad702411125a735",
+          "owner": {
+            "context_id": "5e413f9a9e634bf8bfb8c0f84edcfd28",
+            "run_id": "5e413f9a9e634bf8bfb8c0f84edcfd28"
+          },
+          "revision": 1,
+          "kind": "host",
+          "host": {
+            "tool": "native_shell_job",
+            "args": {
+              "command": "'must not execute'"
+            }
+          },
+          "directory": "C:\\Users\\brubing\\AppData\\Local\\Temp\\focus-native-host-q6qy02t5",
+          "resources": [
+            {
+              "name": "native-shell:global-host-effects",
+              "mode": "write"
+            }
+          ],
+          "timeout_ms": 30000
+        },
+        "result": {
+          "state": "failed",
+          "error": "WorkspaceLeaseConflict: workspace lease 不存在、已释放或 token 无效",
+          "host": {
+            "process_cleanup": "not_started",
+            "tool_message": null,
+            "facts": {
+              "ledger_identity": "9c33d5373fbda02d6aba1b778aa1d427ec4f23d86e6fcb713f338f45ba9a8906",
+              "ledger_claims": 0,
+              "ledger_completions": 0,
+              "ledger_cached": false
+            }
+          }
+        },
+        "timing": {
+          "queued_ns": 1793419706334231300,
+          "started_ns": 1793419706488061900,
+          "finished_ns": 1793419706495407300
+        }
+      },
+      "runtime_ack": false,
+      "passed": true
+    }
+  ],
+  "platform": "win32",
+  "context_index_commit": "af8e65658d9c5351ae5ca0d68ec2ac094f5f240c",
+  "scope": "native host Shell vertical slice, not production Agent/Patrol middleware integration",
+  "source_sha256": {
+    "cmd/runtime/main.go": "e555117f900347a1f8f272bc8aae9d74effcaaeb1818654fa9b33e115e69881a",
+    "cmd/runtime/main_test.go": "9830a1c4e05be63d9cef31f01c829a394f575e5dcee6e1e10a0a8108e0a00f6f",
+    "cmd/runtime/trace.go": "2ed75b662b58f38b92fd63c0764511d01ab3dac49fef28fc6fbd0bb48c109144",
+    "integration/focus/host_shell.py": "243fc4aa1ce5b2da66135cbe6cb78101573450818a03f4ba21f4b8f1c1acab40",
+    "integration/focus/test_host_shell.py": "454f106290eed2db11a095c378134ac7dc6961e60d51e7262bf5f424929d1d2b",
+    "python/focus_tool/__init__.py": "b7222e1f932f626de66c79ffa7aaa063e5769f99e25173a498019bddc51edf07",
+    "python/focus_tool/adapter.py": "59ee85f69d3d5e6547628029dad97ea5ad01de2dc6dc02a1d839553c925a350d",
+    "python/focus_tool/bridge.py": "948e283795fff0ef339709cd400932e03c662b186c78aa71d0f567b43edbcc90",
+    "python/focus_tool/client.py": "51e8f02d65806f95595c569a7c85b7c06c1ebf08c6d08dbb3bd66a0945e4f76c",
+    "python/focus_tool/custody.py": "b9a8c45e408ebadf3779c782e75f7ed4db69697c44dc519f92fb194de2c334c5",
+    "python/focus_tool/transport.py": "f8259eb4d7e693a89504ba346cee7504fc65d9c36a430a5cc91a2cf7421ae318",
+    "python/focus_tool/wake.py": "aedb475afcb031e3801b034555f6e10ec7f69f23c4a3ba72560d62cba68ad73a",
+    "runtime/compaction.go": "e7a23b083122b8a65f723f52abc7f0ab28d0bad1e0c5e18a1f00dc5a5d934b18",
+    "runtime/compaction_test.go": "b5736e702fb0e647ab415c01224b541f53bf0b601fa62731c55043c685aab5f7",
+    "runtime/dispatch_control.go": "c0256c26d4e2aa42fe5ec4cb2bb54307b436cef94c6d4d3b894eae90085e00dc",
+    "runtime/dispatch_control_test.go": "9a31bed6788d0a052318d017a87f8b62c3ba15d218c2e3ce85978d39a323ebcf",
+    "runtime/durable_unix.go": "8160a1c04111a59770fe51e7088440c19d07514dfc32dc6661490aa36d5cc321",
+    "runtime/durable_windows.go": "335c57e6f912fc5197bdf82e485d8c66462fa308a790c8da391170c7513afe89",
+    "runtime/engine.go": "7ac297c579930fa9672c4c5f559333d963228605c10dd42fe5dc4126a9e3d358",
+    "runtime/engine_test.go": "12a00eb975d7875b781727d22128639098861cd0460b0b3c0fe349b2b495662d",
+    "runtime/history.go": "6ae90cf69439ff84023b3f507bfcc8e81dc5a12c700ba254497c946eb64bcf9e",
+    "runtime/history_test.go": "908a63d821708cdd00e5f42d12d00cd914b4ea0bc5b22be65a7bd5f1fe154ff1",
+    "runtime/host.go": "b2d18c366c012555ea628f4154328e2724f196beeb685fe730932eb82f89e7d6",
+    "runtime/host_test.go": "4e045a6b27c26e247aeab6d128d58075c9465741879e88b6033ca9cac6a50bae",
+    "runtime/journal.go": "028b1c28735b07e86c80f91a7f1410aa179fd6140600c49933c8bb375b3a9641",
+    "runtime/lock_unix.go": "72010d2ce685fd6e9e550276f3f570cf609af384f73a9a9b66d0a3098110ab5a",
+    "runtime/lock_windows.go": "2bee60f15fd478cc18820a0abda6763c191c2165cacb10c4cf4cfc4aacfa144e",
+    "runtime/process.go": "221dda57b3fe6b275d6a1c2b0bd6b04177fc4c752cba26572357c51c2fc91179",
+    "runtime/process_test.go": "873499064fed7a633e85088015c027c57fd5b4203089e18a45a635af239199c2",
+    "runtime/python_pool.go": "047f203945d041a4eceec9260999d8daf09420b14d0950d9016eda7f439b59b8",
+    "runtime/python_pool_test.go": "6fe012f157983174e9b77cf97d2392df510b324858bd799a2484d9d44b1594b5",
+    "runtime/python_pool_worker.py": "d78ca081bf926d2b54f0bf26b6621fa925f2b7d85e055a913464f00775197ba6",
+    "runtime/python_worker.py": "ea97f3d4083daf05c5c053a08f8c60a539795b2d278d40fda1669b69722800e0",
+    "runtime/recovery.go": "de58d514b1079ab088bc743245185c4c53fb695d2e0ecc8c72765d7cdaae0345",
+    "runtime/trace.go": "0bc187f7cac7a697ca5a80c805a383f54aa5ac23ac4f22de0916951857c89115",
+    "runtime/trace_test.go": "be50dd6c471383a41a999985716daf3cc7bb0725749a3de2b5a0a9c83cbea2c2",
+    "runtime/types.go": "6de0744b5cd907fcbfce6fdda52912e0f8f72e5aeae7935b81ab2760bcc6a7ab"
+  }
+}
