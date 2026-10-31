@@ -18,6 +18,7 @@ class WakeControls(unittest.IsolatedAsyncioTestCase):
     async def test_settled_old_round_is_deferred_before_observation_capture(self):
         from patrol_activation import PatrolHarness, AgentLoop
         harness = object.__new__(PatrolHarness)
+        harness.progress_probe = None
         harness.trace = None
         harness.progress = SimpleNamespace(drain=AsyncMock(return_value=0))
         harness.coordinator = SimpleNamespace(maintain_rounds=AsyncMock())

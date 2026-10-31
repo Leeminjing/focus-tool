@@ -1,0 +1,1396 @@
+{
+  "passed": true,
+  "config": {
+    "focus_commit": "340bf2b8607dfb536d9376d400a02b122a4542bb",
+    "base_commit": "e37960f8265f6f8600ce9eb46e335db9f9897da5",
+    "source_sha256": {
+      "cmd/runtime/main.go": "4b599cfff31ab75c63f7b25bcd820e915c092ca2857b9e0f05a30c9dddb8af20",
+      "cmd/runtime/main_test.go": "9830a1c4e05be63d9cef31f01c829a394f575e5dcee6e1e10a0a8108e0a00f6f",
+      "cmd/runtime/trace.go": "2ed75b662b58f38b92fd63c0764511d01ab3dac49fef28fc6fbd0bb48c109144",
+      "integration/focus/benchmark_patrol.py": "1adba2b5eedd46ea5518e93d72b4754e4eb32485867b4889d92f6b06cdb73f10",
+      "integration/focus/patrol_activation.py": "a5e9bc119f3140eaec7d751bd4b5fa0e4cc2b5ae68ccad3b46dca283c2b1818f",
+      "integration/focus/patrol_benchmark_tools.py": "4dcd6ed8852a304665050604da00fa98be7e08bc21bdc69ce3e1fbd795024c23",
+      "integration/focus/patrol_driver.py": "0d21de1686def9aa366bf579b1494a07d02075d3eea4379e8d45a85214d74cb2",
+      "integration/focus/patrol_service.py": "0daeefe7d327c3e36dafeffe82bcf6b60b8127d847c99925b966d4ad2256062d",
+      "integration/focus/patrol_store.py": "bafe2791113635c454a2b3d6d0160773112c44f3cf606c9002357e604c5077cd",
+      "integration/focus/patrol_tools.py": "aa6d3c63f33fe7f2f1f6730c5a63abf666806bda7674bd2d86e245e1ab4d03e6",
+      "integration/focus/run_automatic.py": "1d95646234ba666a8cd448b49a2dceec611c8e067d3f2effa0a39860ffa79c72",
+      "integration/focus/run_live.py": "62b3cc7208bc9d23f97f53f082b2e620b2aeb4e1885dd72d07b34f9110d4dabe",
+      "integration/focus/run_patrol.py": "d66f99104a53c212a30385cf2afeaa34a65540eb83284a795a46828c8384d99e",
+      "integration/focus/task_progress_probe.py": "26310bbee5753c0d6bb799d704a0d35135f617c54eacb1b3ab6ea8651f58f144",
+      "integration/focus/test_wake_controls.py": "5e7efc97eb99878f05a0a4c3d3645594fe44b1dd464bf9e3f41addb9fb65390f",
+      "python/focus_tool/__init__.py": "b7222e1f932f626de66c79ffa7aaa063e5769f99e25173a498019bddc51edf07",
+      "python/focus_tool/adapter.py": "c20e9c53212d2ac758d3d56048e6cdf91078fb6e2c7b1fcceb36f09514532170",
+      "python/focus_tool/bridge.py": "948e283795fff0ef339709cd400932e03c662b186c78aa71d0f567b43edbcc90",
+      "python/focus_tool/client.py": "e4441b2470fd2d19a0dc77b0e4ce3163572cfa20220ac121c1667d6b81b763c9",
+      "python/focus_tool/custody.py": "b9a8c45e408ebadf3779c782e75f7ed4db69697c44dc519f92fb194de2c334c5",
+      "python/focus_tool/transport.py": "f8259eb4d7e693a89504ba346cee7504fc65d9c36a430a5cc91a2cf7421ae318",
+      "python/focus_tool/wake.py": "aedb475afcb031e3801b034555f6e10ec7f69f23c4a3ba72560d62cba68ad73a",
+      "runtime/compaction.go": "e7a23b083122b8a65f723f52abc7f0ab28d0bad1e0c5e18a1f00dc5a5d934b18",
+      "runtime/compaction_test.go": "b5736e702fb0e647ab415c01224b541f53bf0b601fa62731c55043c685aab5f7",
+      "runtime/dispatch_control.go": "c0256c26d4e2aa42fe5ec4cb2bb54307b436cef94c6d4d3b894eae90085e00dc",
+      "runtime/dispatch_control_test.go": "9a31bed6788d0a052318d017a87f8b62c3ba15d218c2e3ce85978d39a323ebcf",
+      "runtime/durable_unix.go": "8160a1c04111a59770fe51e7088440c19d07514dfc32dc6661490aa36d5cc321",
+      "runtime/durable_windows.go": "335c57e6f912fc5197bdf82e485d8c66462fa308a790c8da391170c7513afe89",
+      "runtime/engine.go": "3a9814a0210f9850ed661c25b167977855959cd17a61a0d13ae6185700bb8e69",
+      "runtime/engine_test.go": "12a00eb975d7875b781727d22128639098861cd0460b0b3c0fe349b2b495662d",
+      "runtime/history.go": "6ae90cf69439ff84023b3f507bfcc8e81dc5a12c700ba254497c946eb64bcf9e",
+      "runtime/history_test.go": "908a63d821708cdd00e5f42d12d00cd914b4ea0bc5b22be65a7bd5f1fe154ff1",
+      "runtime/journal.go": "028b1c28735b07e86c80f91a7f1410aa179fd6140600c49933c8bb375b3a9641",
+      "runtime/lock_unix.go": "72010d2ce685fd6e9e550276f3f570cf609af384f73a9a9b66d0a3098110ab5a",
+      "runtime/lock_windows.go": "2bee60f15fd478cc18820a0abda6763c191c2165cacb10c4cf4cfc4aacfa144e",
+      "runtime/process.go": "221dda57b3fe6b275d6a1c2b0bd6b04177fc4c752cba26572357c51c2fc91179",
+      "runtime/process_test.go": "873499064fed7a633e85088015c027c57fd5b4203089e18a45a635af239199c2",
+      "runtime/python_pool.go": "047f203945d041a4eceec9260999d8daf09420b14d0950d9016eda7f439b59b8",
+      "runtime/python_pool_test.go": "6fe012f157983174e9b77cf97d2392df510b324858bd799a2484d9d44b1594b5",
+      "runtime/python_pool_worker.py": "d78ca081bf926d2b54f0bf26b6621fa925f2b7d85e055a913464f00775197ba6",
+      "runtime/python_worker.py": "ea97f3d4083daf05c5c053a08f8c60a539795b2d278d40fda1669b69722800e0",
+      "runtime/recovery.go": "de58d514b1079ab088bc743245185c4c53fb695d2e0ecc8c72765d7cdaae0345",
+      "runtime/trace.go": "0bc187f7cac7a697ca5a80c805a383f54aa5ac23ac4f22de0916951857c89115",
+      "runtime/trace_test.go": "be50dd6c471383a41a999985716daf3cc7bb0725749a3de2b5a0a9c83cbea2c2",
+      "runtime/types.go": "07fd138e606215edbf7add748280f71ce6582f81cd3ef14ab3684df2dd83339f"
+    },
+    "workload": {
+      "corpus_bytes": 8388608,
+      "passes": {
+        "A": 1461,
+        "B": 365
+      },
+      "calibration": {
+        "probe_passes": 32,
+        "probe_seconds": 0.1126987,
+        "target_seconds": 8.0,
+        "explicit_passes": 1461
+      },
+      "expected_digest": {
+        "A": "1d7459d2f1f8fcbadf3a3e27f88f4487a26eff996649707b3ded45232f890ec5",
+        "B": "e672896a977d3576c781c336c4d6aa73f6396aa508e9105f44bcc6efc1e32858"
+      }
+    },
+    "repeat": 10,
+    "warmup_per_arm": 1,
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+    "go": "go version go1.26.5 windows/amd64",
+    "tool_concurrency": 4,
+    "run_concurrency": 2,
+    "journal": "per-mutation fsync; default background 8 MiB",
+    "task_progress_probe": true,
+    "decision_rule": "barrier waits only same-Context original batch; B is independent and finite",
+    "started_at_utc": "2026-10-31T02:30:06.545485+00:00"
+  },
+  "sample_count": 44,
+  "summary": {
+    "replan": {
+      "barrier": {
+        "n": 10,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 12084.271850000001,
+          "first_body_to_quiescent_ms": 10392.61935,
+          "check_finished_to_effective_ms": 7921.85785,
+          "service_start_through_shutdown_ms": 12129.5343
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 18.8218,
+            "window_wall_ms": 18.79765,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "coordinator_release": {
+            "total_ms": 6.0957,
+            "window_wall_ms": 6.2924500000000005,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "kernel_commit": {
+            "total_ms": 216.39679999999998,
+            "window_wall_ms": 215.99505,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "observation_capture": {
+            "total_ms": 348.92515000000003,
+            "window_wall_ms": 349.04435,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "patrol_decision": {
+            "total_ms": 27.083350000000003,
+            "window_wall_ms": 27.4371,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_identity_read": {
+            "total_ms": 2.8463000000000003,
+            "window_wall_ms": 2.91575,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_maintenance": {
+            "total_ms": 337.877,
+            "window_wall_ms": 337.89585,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "round_state_read": {
+            "total_ms": 8.448599999999999,
+            "window_wall_ms": 8.2889,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "schedule_total": {
+            "total_ms": 1365.91365,
+            "window_wall_ms": 1365.8012,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "task_progress": {
+            "total_ms": 441.97985,
+            "window_wall_ms": 442.12405,
+            "crosses_boundary": 0,
+            "calls": 4.0
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2.0,
+          "progress_drain_calls": 4.0,
+          "progress_work_items": 2.0
+        },
+        "activation_count_medians": {
+          "A": 3.0,
+          "B": 2.0
+        },
+        "scan_states": {
+          "completed": 10
+        },
+        "task_progress_phase_medians": {
+          "work": {
+            "accounting_record": {
+              "calls": 4.0,
+              "total_ms": 157.845,
+              "exclusive_ms": 74.40325,
+              "window_wall_ms": 158.43720000000002,
+              "sql_count": 124.0,
+              "sql_ms": 121.31935,
+              "sql_errors_total": 0
+            },
+            "accounting_view": {
+              "calls": 4.0,
+              "total_ms": 83.44175,
+              "exclusive_ms": 83.44175,
+              "window_wall_ms": 83.61985,
+              "sql_count": 64.0,
+              "sql_ms": 63.6579,
+              "sql_errors_total": 0
+            },
+            "budget_estimate": {
+              "calls": 2.0,
+              "total_ms": 1.2365,
+              "exclusive_ms": 1.2365,
+              "window_wall_ms": 1.1576,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_messages": {
+              "calls": 2.0,
+              "total_ms": 2.9715,
+              "exclusive_ms": 2.9715,
+              "window_wall_ms": 3.57885,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_reserve": {
+              "calls": 2.0,
+              "total_ms": 107.14325,
+              "exclusive_ms": 17.73415,
+              "window_wall_ms": 107.26335,
+              "sql_count": 70.0,
+              "sql_ms": 74.8551,
+              "sql_errors_total": 0
+            },
+            "candidate_schema": {
+              "calls": 2.0,
+              "total_ms": 3.8261000000000003,
+              "exclusive_ms": 3.8261000000000003,
+              "window_wall_ms": 3.6778500000000003,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 86.80215000000001,
+              "exclusive_ms": 23.510550000000002,
+              "window_wall_ms": 86.91225,
+              "sql_count": 46.0,
+              "sql_ms": 66.98635,
+              "sql_errors_total": 0
+            },
+            "consolidate": {
+              "calls": 2.0,
+              "total_ms": 321.67695000000003,
+              "exclusive_ms": 6.2367,
+              "window_wall_ms": 321.35450000000003,
+              "sql_count": 195.0,
+              "sql_ms": 226.61079999999998,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 434.08349999999996,
+              "exclusive_ms": 0.10239999999999999,
+              "window_wall_ms": 434.22575,
+              "sql_count": 245.0,
+              "sql_ms": 307.71180000000004,
+              "sql_errors_total": 0
+            },
+            "input_assembly": {
+              "calls": 6.0,
+              "total_ms": 6.96655,
+              "exclusive_ms": 6.96655,
+              "window_wall_ms": 7.7600999999999996,
+              "sql_count": 2.0,
+              "sql_ms": 4.540649999999999,
+              "sql_errors_total": 0
+            },
+            "input_freeze": {
+              "calls": 2.0,
+              "total_ms": 60.82435,
+              "exclusive_ms": 60.82435,
+              "window_wall_ms": 62.2732,
+              "sql_count": 34.0,
+              "sql_ms": 48.37185,
+              "sql_errors_total": 0
+            },
+            "interpret": {
+              "calls": 2.0,
+              "total_ms": 217.64620000000002,
+              "exclusive_ms": 2.76485,
+              "window_wall_ms": 217.62035,
+              "sql_count": 140.0,
+              "sql_ms": 148.16025000000002,
+              "sql_errors_total": 0
+            },
+            "lease_execution": {
+              "calls": 2.0,
+              "total_ms": 335.23855000000003,
+              "exclusive_ms": 0.24009999999999998,
+              "window_wall_ms": 335.0582,
+              "sql_count": 199.0,
+              "sql_ms": 233.76229999999998,
+              "sql_errors_total": 0
+            },
+            "lease_renewal": {
+              "calls": 2.0,
+              "total_ms": 13.8995,
+              "exclusive_ms": 11.07995,
+              "window_wall_ms": 13.736650000000001,
+              "sql_count": 4.0,
+              "sql_ms": 9.638349999999999,
+              "sql_errors_total": 0
+            },
+            "payload_assembly": {
+              "calls": 2.0,
+              "total_ms": 0.0542,
+              "exclusive_ms": 0.0542,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "provider": {
+              "calls": 2.0,
+              "total_ms": 0.0487,
+              "exclusive_ms": 0.0487,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "publish": {
+              "calls": 2.0,
+              "total_ms": 62.3895,
+              "exclusive_ms": 61.931,
+              "window_wall_ms": 62.091899999999995,
+              "sql_count": 43.0,
+              "sql_ms": 50.271100000000004,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 12.0,
+              "total_ms": 19.0027,
+              "exclusive_ms": 19.0027,
+              "window_wall_ms": 19.20645,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "usage_settlement": {
+              "calls": 2.0,
+              "total_ms": 94.1944,
+              "exclusive_ms": 13.1754,
+              "window_wall_ms": 94.13175000000001,
+              "sql_count": 70.0,
+              "sql_ms": 69.46860000000001,
+              "sql_errors_total": 0
+            },
+            "validation_apply": {
+              "calls": 2.0,
+              "total_ms": 0.19169999999999998,
+              "exclusive_ms": 0.19169999999999998,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "validation_recheck": {
+              "calls": 2.0,
+              "total_ms": 11.3683,
+              "exclusive_ms": 10.89615,
+              "window_wall_ms": 11.4739,
+              "sql_count": 6.0,
+              "sql_ms": 9.0715,
+              "sql_errors_total": 0
+            },
+            "validation_record": {
+              "calls": 2.0,
+              "total_ms": 19.673099999999998,
+              "exclusive_ms": 5.6408000000000005,
+              "window_wall_ms": 19.603299999999997,
+              "sql_count": 8.0,
+              "sql_ms": 12.39435,
+              "sql_errors_total": 0
+            }
+          },
+          "empty": {
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 7.293749999999999,
+              "exclusive_ms": 5.7629,
+              "window_wall_ms": 7.1809,
+              "sql_count": 2.0,
+              "sql_ms": 4.19265,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 7.3316,
+              "exclusive_ms": 0.03755,
+              "window_wall_ms": 7.1809,
+              "sql_count": 2.0,
+              "sql_ms": 4.19265,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 2.0,
+              "total_ms": 1.5621999999999998,
+              "exclusive_ms": 1.5621999999999998,
+              "window_wall_ms": 1.36565,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            }
+          },
+          "failed": {}
+        }
+      },
+      "event": {
+        "n": 10,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 7080.82215,
+          "first_body_to_quiescent_ms": 5342.029,
+          "check_finished_to_effective_ms": 2838.5491,
+          "service_start_through_shutdown_ms": 7126.974
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 25.9163,
+            "window_wall_ms": 26.083849999999998,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "coordinator_release": {
+            "total_ms": 7.1348,
+            "window_wall_ms": 6.7299500000000005,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "kernel_commit": {
+            "total_ms": 228.64915,
+            "window_wall_ms": 228.65125,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "observation_capture": {
+            "total_ms": 401.42075,
+            "window_wall_ms": 401.56785,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "patrol_decision": {
+            "total_ms": 30.942149999999998,
+            "window_wall_ms": 30.93445,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_identity_read": {
+            "total_ms": 3.1658999999999997,
+            "window_wall_ms": 2.9461500000000003,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_maintenance": {
+            "total_ms": 322.37315,
+            "window_wall_ms": 322.3494,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "round_state_read": {
+            "total_ms": 9.60315,
+            "window_wall_ms": 9.92685,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "schedule_total": {
+            "total_ms": 1502.6984,
+            "window_wall_ms": 1502.7671,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "task_progress": {
+            "total_ms": 530.4858999999999,
+            "window_wall_ms": 530.67795,
+            "crosses_boundary": 0,
+            "calls": 4.0
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2.0,
+          "progress_drain_calls": 4.0,
+          "progress_work_items": 2.0
+        },
+        "activation_count_medians": {
+          "A": 3.0,
+          "B": 2.0
+        },
+        "scan_states": {
+          "cancelled": 10
+        },
+        "task_progress_phase_medians": {
+          "work": {
+            "accounting_record": {
+              "calls": 4.0,
+              "total_ms": 193.39915,
+              "exclusive_ms": 83.9131,
+              "window_wall_ms": 192.81304999999998,
+              "sql_count": 124.0,
+              "sql_ms": 147.18574999999998,
+              "sql_errors_total": 0
+            },
+            "accounting_view": {
+              "calls": 4.0,
+              "total_ms": 109.32775000000001,
+              "exclusive_ms": 109.32775000000001,
+              "window_wall_ms": 109.38695,
+              "sql_count": 64.0,
+              "sql_ms": 83.555,
+              "sql_errors_total": 0
+            },
+            "budget_estimate": {
+              "calls": 2.0,
+              "total_ms": 1.31325,
+              "exclusive_ms": 1.31325,
+              "window_wall_ms": 1.4047,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_messages": {
+              "calls": 2.0,
+              "total_ms": 3.48965,
+              "exclusive_ms": 3.48965,
+              "window_wall_ms": 3.46665,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_reserve": {
+              "calls": 2.0,
+              "total_ms": 127.0605,
+              "exclusive_ms": 20.3617,
+              "window_wall_ms": 127.1906,
+              "sql_count": 70.0,
+              "sql_ms": 91.5814,
+              "sql_errors_total": 0
+            },
+            "candidate_schema": {
+              "calls": 2.0,
+              "total_ms": 3.7737,
+              "exclusive_ms": 3.7737,
+              "window_wall_ms": 3.63535,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 134.2783,
+              "exclusive_ms": 33.1287,
+              "window_wall_ms": 134.29975000000002,
+              "sql_count": 46.0,
+              "sql_ms": 104.03065000000001,
+              "sql_errors_total": 0
+            },
+            "consolidate": {
+              "calls": 2.0,
+              "total_ms": 372.41025,
+              "exclusive_ms": 6.5829,
+              "window_wall_ms": 372.9579,
+              "sql_count": 195.0,
+              "sql_ms": 260.85705,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 521.85195,
+              "exclusive_ms": 0.1203,
+              "window_wall_ms": 522.21235,
+              "sql_count": 245.0,
+              "sql_ms": 371.2177,
+              "sql_errors_total": 0
+            },
+            "input_assembly": {
+              "calls": 6.0,
+              "total_ms": 9.7152,
+              "exclusive_ms": 9.7152,
+              "window_wall_ms": 8.8557,
+              "sql_count": 2.0,
+              "sql_ms": 6.0679,
+              "sql_errors_total": 0
+            },
+            "input_freeze": {
+              "calls": 2.0,
+              "total_ms": 88.97685,
+              "exclusive_ms": 88.97685,
+              "window_wall_ms": 88.50245,
+              "sql_count": 34.0,
+              "sql_ms": 71.73065,
+              "sql_errors_total": 0
+            },
+            "interpret": {
+              "calls": 2.0,
+              "total_ms": 251.0589,
+              "exclusive_ms": 3.2214,
+              "window_wall_ms": 251.3782,
+              "sql_count": 140.0,
+              "sql_ms": 175.8637,
+              "sql_errors_total": 0
+            },
+            "lease_execution": {
+              "calls": 2.0,
+              "total_ms": 403.2543,
+              "exclusive_ms": 0.29135,
+              "window_wall_ms": 402.9013,
+              "sql_count": 199.0,
+              "sql_ms": 285.50515,
+              "sql_errors_total": 0
+            },
+            "lease_renewal": {
+              "calls": 2.0,
+              "total_ms": 18.81875,
+              "exclusive_ms": 15.714200000000002,
+              "window_wall_ms": 19.35725,
+              "sql_count": 4.0,
+              "sql_ms": 11.78355,
+              "sql_errors_total": 0
+            },
+            "payload_assembly": {
+              "calls": 2.0,
+              "total_ms": 0.0626,
+              "exclusive_ms": 0.0626,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "provider": {
+              "calls": 2.0,
+              "total_ms": 0.061649999999999996,
+              "exclusive_ms": 0.061649999999999996,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "publish": {
+              "calls": 2.0,
+              "total_ms": 79.30924999999999,
+              "exclusive_ms": 78.71825,
+              "window_wall_ms": 79.08035000000001,
+              "sql_count": 43.0,
+              "sql_ms": 62.640699999999995,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 12.0,
+              "total_ms": 19.252850000000002,
+              "exclusive_ms": 19.252850000000002,
+              "window_wall_ms": 18.624,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "usage_settlement": {
+              "calls": 2.0,
+              "total_ms": 110.09165,
+              "exclusive_ms": 17.3696,
+              "window_wall_ms": 110.46415,
+              "sql_count": 70.0,
+              "sql_ms": 80.90075,
+              "sql_errors_total": 0
+            },
+            "validation_apply": {
+              "calls": 2.0,
+              "total_ms": 0.23305,
+              "exclusive_ms": 0.23305,
+              "window_wall_ms": 0.1625,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "validation_recheck": {
+              "calls": 2.0,
+              "total_ms": 14.0232,
+              "exclusive_ms": 13.412099999999999,
+              "window_wall_ms": 13.9218,
+              "sql_count": 6.0,
+              "sql_ms": 10.780149999999999,
+              "sql_errors_total": 0
+            },
+            "validation_record": {
+              "calls": 2.0,
+              "total_ms": 22.874200000000002,
+              "exclusive_ms": 6.1936,
+              "window_wall_ms": 22.9498,
+              "sql_count": 8.0,
+              "sql_ms": 14.7091,
+              "sql_errors_total": 0
+            }
+          },
+          "empty": {
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 8.57415,
+              "exclusive_ms": 7.07005,
+              "window_wall_ms": 8.8668,
+              "sql_count": 2.0,
+              "sql_ms": 5.249650000000001,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 8.6157,
+              "exclusive_ms": 0.0455,
+              "window_wall_ms": 8.8668,
+              "sql_count": 2.0,
+              "sql_ms": 5.249650000000001,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 2.0,
+              "total_ms": 1.5878,
+              "exclusive_ms": 1.5878,
+              "window_wall_ms": 1.6120999999999999,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            }
+          },
+          "failed": {}
+        }
+      }
+    },
+    "necessary": {
+      "barrier": {
+        "n": 10,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 9454.29655,
+          "first_body_to_quiescent_ms": 7970.7003,
+          "check_finished_to_effective_ms": 7343.97695,
+          "service_start_through_shutdown_ms": 9499.67025
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 24.2317,
+            "window_wall_ms": 24.139499999999998,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "coordinator_release": {
+            "total_ms": 5.9206,
+            "window_wall_ms": 6.01235,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "kernel_commit": {
+            "total_ms": 217.78645,
+            "window_wall_ms": 217.83915,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "observation_capture": {
+            "total_ms": 339.99825,
+            "window_wall_ms": 339.98895,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "patrol_decision": {
+            "total_ms": 28.176099999999998,
+            "window_wall_ms": 28.325650000000003,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_identity_read": {
+            "total_ms": 3.1897,
+            "window_wall_ms": 3.2004,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_maintenance": {
+            "total_ms": 312.46145,
+            "window_wall_ms": 312.3311,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "round_state_read": {
+            "total_ms": 8.5822,
+            "window_wall_ms": 8.18945,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "schedule_total": {
+            "total_ms": 1355.38845,
+            "window_wall_ms": 1355.61695,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "task_progress": {
+            "total_ms": 439.49165000000005,
+            "window_wall_ms": 435.94095000000004,
+            "crosses_boundary": 0,
+            "calls": 4.0
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2.0,
+          "progress_drain_calls": 4.0,
+          "progress_work_items": 2.0
+        },
+        "activation_count_medians": {
+          "A": 2.0,
+          "B": 2.0
+        },
+        "scan_states": {
+          "completed": 10
+        },
+        "task_progress_phase_medians": {
+          "work": {
+            "accounting_record": {
+              "calls": 4.0,
+              "total_ms": 171.6948,
+              "exclusive_ms": 84.29245,
+              "window_wall_ms": 172.45420000000001,
+              "sql_count": 124.0,
+              "sql_ms": 129.49355,
+              "sql_errors_total": 0
+            },
+            "accounting_view": {
+              "calls": 4.0,
+              "total_ms": 84.5522,
+              "exclusive_ms": 84.5522,
+              "window_wall_ms": 84.37835,
+              "sql_count": 64.0,
+              "sql_ms": 64.1542,
+              "sql_errors_total": 0
+            },
+            "budget_estimate": {
+              "calls": 2.0,
+              "total_ms": 1.24395,
+              "exclusive_ms": 1.24395,
+              "window_wall_ms": 1.21895,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_messages": {
+              "calls": 2.0,
+              "total_ms": 3.0956,
+              "exclusive_ms": 3.0956,
+              "window_wall_ms": 3.75685,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_reserve": {
+              "calls": 2.0,
+              "total_ms": 110.3162,
+              "exclusive_ms": 16.7206,
+              "window_wall_ms": 111.3827,
+              "sql_count": 70.0,
+              "sql_ms": 74.85300000000001,
+              "sql_errors_total": 0
+            },
+            "candidate_schema": {
+              "calls": 2.0,
+              "total_ms": 3.2435,
+              "exclusive_ms": 3.2435,
+              "window_wall_ms": 3.21365,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 107.86875,
+              "exclusive_ms": 23.1837,
+              "window_wall_ms": 107.3594,
+              "sql_count": 46.0,
+              "sql_ms": 83.0651,
+              "sql_errors_total": 0
+            },
+            "consolidate": {
+              "calls": 2.0,
+              "total_ms": 331.72294999999997,
+              "exclusive_ms": 5.8644,
+              "window_wall_ms": 330.89485,
+              "sql_count": 195.0,
+              "sql_ms": 237.45389999999998,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 432.06579999999997,
+              "exclusive_ms": 0.09770000000000001,
+              "window_wall_ms": 431.0827,
+              "sql_count": 245.0,
+              "sql_ms": 325.6619,
+              "sql_errors_total": 0
+            },
+            "input_assembly": {
+              "calls": 6.0,
+              "total_ms": 6.5609,
+              "exclusive_ms": 6.5609,
+              "window_wall_ms": 7.503500000000001,
+              "sql_count": 2.0,
+              "sql_ms": 4.1466,
+              "sql_errors_total": 0
+            },
+            "input_freeze": {
+              "calls": 2.0,
+              "total_ms": 83.3771,
+              "exclusive_ms": 83.3771,
+              "window_wall_ms": 83.43645000000001,
+              "sql_count": 34.0,
+              "sql_ms": 60.7888,
+              "sql_errors_total": 0
+            },
+            "interpret": {
+              "calls": 2.0,
+              "total_ms": 221.6701,
+              "exclusive_ms": 2.8242000000000003,
+              "window_wall_ms": 221.4841,
+              "sql_count": 140.0,
+              "sql_ms": 154.02134999999998,
+              "sql_errors_total": 0
+            },
+            "lease_execution": {
+              "calls": 2.0,
+              "total_ms": 344.80420000000004,
+              "exclusive_ms": 0.25495,
+              "window_wall_ms": 344.09315000000004,
+              "sql_count": 199.0,
+              "sql_ms": 245.87625000000003,
+              "sql_errors_total": 0
+            },
+            "lease_renewal": {
+              "calls": 2.0,
+              "total_ms": 13.273499999999999,
+              "exclusive_ms": 10.3509,
+              "window_wall_ms": 13.0149,
+              "sql_count": 4.0,
+              "sql_ms": 8.4206,
+              "sql_errors_total": 0
+            },
+            "payload_assembly": {
+              "calls": 2.0,
+              "total_ms": 0.0559,
+              "exclusive_ms": 0.0559,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "provider": {
+              "calls": 2.0,
+              "total_ms": 0.0607,
+              "exclusive_ms": 0.0607,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "publish": {
+              "calls": 2.0,
+              "total_ms": 71.95385,
+              "exclusive_ms": 71.51965,
+              "window_wall_ms": 71.96835,
+              "sql_count": 43.0,
+              "sql_ms": 56.5891,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 12.0,
+              "total_ms": 19.6058,
+              "exclusive_ms": 19.6058,
+              "window_wall_ms": 19.97235,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "usage_settlement": {
+              "calls": 2.0,
+              "total_ms": 100.70295,
+              "exclusive_ms": 14.55795,
+              "window_wall_ms": 100.489,
+              "sql_count": 70.0,
+              "sql_ms": 76.0053,
+              "sql_errors_total": 0
+            },
+            "validation_apply": {
+              "calls": 2.0,
+              "total_ms": 0.1875,
+              "exclusive_ms": 0.1875,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "validation_recheck": {
+              "calls": 2.0,
+              "total_ms": 12.6795,
+              "exclusive_ms": 11.9389,
+              "window_wall_ms": 12.42035,
+              "sql_count": 6.0,
+              "sql_ms": 9.22415,
+              "sql_errors_total": 0
+            },
+            "validation_record": {
+              "calls": 2.0,
+              "total_ms": 21.8174,
+              "exclusive_ms": 5.351800000000001,
+              "window_wall_ms": 21.4698,
+              "sql_count": 8.0,
+              "sql_ms": 13.2858,
+              "sql_errors_total": 0
+            }
+          },
+          "empty": {
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 7.7735,
+              "exclusive_ms": 6.1895500000000006,
+              "window_wall_ms": 7.3544,
+              "sql_count": 2.0,
+              "sql_ms": 4.3483,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 7.8243,
+              "exclusive_ms": 0.0451,
+              "window_wall_ms": 7.95055,
+              "sql_count": 2.0,
+              "sql_ms": 4.3483,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 2.0,
+              "total_ms": 1.54545,
+              "exclusive_ms": 1.54545,
+              "window_wall_ms": 1.6571,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            }
+          },
+          "failed": {}
+        }
+      },
+      "event": {
+        "n": 10,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 9789.3533,
+          "first_body_to_quiescent_ms": 8113.89735,
+          "check_finished_to_effective_ms": 7334.0764,
+          "service_start_through_shutdown_ms": 9832.7719
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 23.46315,
+            "window_wall_ms": 23.759700000000002,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "coordinator_release": {
+            "total_ms": 7.404450000000001,
+            "window_wall_ms": 7.3386499999999995,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "kernel_commit": {
+            "total_ms": 255.86130000000003,
+            "window_wall_ms": 255.97575,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "observation_capture": {
+            "total_ms": 383.9752,
+            "window_wall_ms": 383.91535,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "patrol_decision": {
+            "total_ms": 37.7962,
+            "window_wall_ms": 37.8588,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_identity_read": {
+            "total_ms": 3.01165,
+            "window_wall_ms": 3.2258,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "round_maintenance": {
+            "total_ms": 351.53745000000004,
+            "window_wall_ms": 351.78405,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "round_state_read": {
+            "total_ms": 9.8608,
+            "window_wall_ms": 9.9589,
+            "crosses_boundary": 0,
+            "calls": 2.0
+          },
+          "schedule_total": {
+            "total_ms": 1590.94315,
+            "window_wall_ms": 1590.7444500000001,
+            "crosses_boundary": 0,
+            "calls": 1.0
+          },
+          "task_progress": {
+            "total_ms": 543.718,
+            "window_wall_ms": 543.5554999999999,
+            "crosses_boundary": 0,
+            "calls": 4.0
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2.0,
+          "progress_drain_calls": 4.0,
+          "progress_work_items": 2.0
+        },
+        "activation_count_medians": {
+          "A": 3.0,
+          "B": 2.0
+        },
+        "scan_states": {
+          "completed": 10
+        },
+        "task_progress_phase_medians": {
+          "work": {
+            "accounting_record": {
+              "calls": 4.0,
+              "total_ms": 213.91469999999998,
+              "exclusive_ms": 95.3266,
+              "window_wall_ms": 212.9654,
+              "sql_count": 124.0,
+              "sql_ms": 166.01855,
+              "sql_errors_total": 0
+            },
+            "accounting_view": {
+              "calls": 4.0,
+              "total_ms": 119.47045,
+              "exclusive_ms": 119.47045,
+              "window_wall_ms": 120.4697,
+              "sql_count": 64.0,
+              "sql_ms": 90.52375,
+              "sql_errors_total": 0
+            },
+            "budget_estimate": {
+              "calls": 2.0,
+              "total_ms": 1.377,
+              "exclusive_ms": 1.377,
+              "window_wall_ms": 1.3702,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_messages": {
+              "calls": 2.0,
+              "total_ms": 4.8295,
+              "exclusive_ms": 4.8295,
+              "window_wall_ms": 4.3454999999999995,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "budget_reserve": {
+              "calls": 2.0,
+              "total_ms": 126.9432,
+              "exclusive_ms": 19.959049999999998,
+              "window_wall_ms": 126.79875000000001,
+              "sql_count": 70.0,
+              "sql_ms": 89.8578,
+              "sql_errors_total": 0
+            },
+            "candidate_schema": {
+              "calls": 2.0,
+              "total_ms": 4.6463,
+              "exclusive_ms": 4.6463,
+              "window_wall_ms": 4.0827,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 126.8804,
+              "exclusive_ms": 34.37765,
+              "window_wall_ms": 126.74435,
+              "sql_count": 46.0,
+              "sql_ms": 94.29230000000001,
+              "sql_errors_total": 0
+            },
+            "consolidate": {
+              "calls": 2.0,
+              "total_ms": 394.23165,
+              "exclusive_ms": 7.18445,
+              "window_wall_ms": 394.43534999999997,
+              "sql_count": 195.0,
+              "sql_ms": 284.6064,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 535.0444,
+              "exclusive_ms": 0.1235,
+              "window_wall_ms": 535.0708,
+              "sql_count": 245.0,
+              "sql_ms": 390.59950000000003,
+              "sql_errors_total": 0
+            },
+            "input_assembly": {
+              "calls": 6.0,
+              "total_ms": 9.6003,
+              "exclusive_ms": 9.6003,
+              "window_wall_ms": 9.8784,
+              "sql_count": 2.0,
+              "sql_ms": 5.9205000000000005,
+              "sql_errors_total": 0
+            },
+            "input_freeze": {
+              "calls": 2.0,
+              "total_ms": 89.98830000000001,
+              "exclusive_ms": 89.98830000000001,
+              "window_wall_ms": 89.57285,
+              "sql_count": 34.0,
+              "sql_ms": 68.99855,
+              "sql_errors_total": 0
+            },
+            "interpret": {
+              "calls": 2.0,
+              "total_ms": 270.2904,
+              "exclusive_ms": 3.1778,
+              "window_wall_ms": 270.18625,
+              "sql_count": 140.0,
+              "sql_ms": 196.83429999999998,
+              "sql_errors_total": 0
+            },
+            "lease_execution": {
+              "calls": 2.0,
+              "total_ms": 409.6882,
+              "exclusive_ms": 0.2755,
+              "window_wall_ms": 409.72929999999997,
+              "sql_count": 199.0,
+              "sql_ms": 293.99744999999996,
+              "sql_errors_total": 0
+            },
+            "lease_renewal": {
+              "calls": 2.0,
+              "total_ms": 17.07815,
+              "exclusive_ms": 13.9147,
+              "window_wall_ms": 17.27055,
+              "sql_count": 4.0,
+              "sql_ms": 10.84465,
+              "sql_errors_total": 0
+            },
+            "payload_assembly": {
+              "calls": 2.0,
+              "total_ms": 0.06420000000000001,
+              "exclusive_ms": 0.06420000000000001,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "provider": {
+              "calls": 2.0,
+              "total_ms": 0.065,
+              "exclusive_ms": 0.065,
+              "window_wall_ms": 0.0,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "publish": {
+              "calls": 2.0,
+              "total_ms": 83.7312,
+              "exclusive_ms": 82.85875,
+              "window_wall_ms": 84.1044,
+              "sql_count": 43.0,
+              "sql_ms": 64.16695,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 12.0,
+              "total_ms": 20.508049999999997,
+              "exclusive_ms": 20.508049999999997,
+              "window_wall_ms": 20.3718,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "usage_settlement": {
+              "calls": 2.0,
+              "total_ms": 130.95274999999998,
+              "exclusive_ms": 18.96685,
+              "window_wall_ms": 131.04399999999998,
+              "sql_count": 70.0,
+              "sql_ms": 97.5757,
+              "sql_errors_total": 0
+            },
+            "validation_apply": {
+              "calls": 2.0,
+              "total_ms": 0.24935,
+              "exclusive_ms": 0.24935,
+              "window_wall_ms": 0.53515,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            },
+            "validation_recheck": {
+              "calls": 2.0,
+              "total_ms": 16.0536,
+              "exclusive_ms": 15.3357,
+              "window_wall_ms": 16.0428,
+              "sql_count": 6.0,
+              "sql_ms": 11.72905,
+              "sql_errors_total": 0
+            },
+            "validation_record": {
+              "calls": 2.0,
+              "total_ms": 25.31135,
+              "exclusive_ms": 5.94575,
+              "window_wall_ms": 24.9518,
+              "sql_count": 8.0,
+              "sql_ms": 15.91225,
+              "sql_errors_total": 0
+            }
+          },
+          "empty": {
+            "claim": {
+              "calls": 2.0,
+              "total_ms": 8.833950000000002,
+              "exclusive_ms": 7.09115,
+              "window_wall_ms": 9.057500000000001,
+              "sql_count": 2.0,
+              "sql_ms": 5.02075,
+              "sql_errors_total": 0
+            },
+            "drain": {
+              "calls": 2.0,
+              "total_ms": 8.8921,
+              "exclusive_ms": 0.048100000000000004,
+              "window_wall_ms": 9.057500000000001,
+              "sql_count": 2.0,
+              "sql_ms": 5.02075,
+              "sql_errors_total": 0
+            },
+            "transaction_commit": {
+              "calls": 2.0,
+              "total_ms": 1.7319499999999999,
+              "exclusive_ms": 1.7319499999999999,
+              "window_wall_ms": 1.6594,
+              "sql_count": 0.0,
+              "sql_ms": 0.0,
+              "sql_errors_total": 0
+            }
+          },
+          "failed": {}
+        }
+      }
+    }
+  },
+  "samples": [
+    "000-warmup-replan-barrier.json",
+    "001-warmup-replan-event.json",
+    "002-warmup-necessary-barrier.json",
+    "003-warmup-necessary-event.json",
+    "004-sample-replan-barrier.json",
+    "005-sample-replan-event.json",
+    "006-sample-necessary-barrier.json",
+    "007-sample-necessary-event.json",
+    "008-sample-necessary-event.json",
+    "009-sample-necessary-barrier.json",
+    "010-sample-replan-event.json",
+    "011-sample-replan-barrier.json",
+    "012-sample-replan-barrier.json",
+    "013-sample-replan-event.json",
+    "014-sample-necessary-barrier.json",
+    "015-sample-necessary-event.json",
+    "016-sample-necessary-event.json",
+    "017-sample-necessary-barrier.json",
+    "018-sample-replan-event.json",
+    "019-sample-replan-barrier.json",
+    "020-sample-replan-barrier.json",
+    "021-sample-replan-event.json",
+    "022-sample-necessary-barrier.json",
+    "023-sample-necessary-event.json",
+    "024-sample-necessary-event.json",
+    "025-sample-necessary-barrier.json",
+    "026-sample-replan-event.json",
+    "027-sample-replan-barrier.json",
+    "028-sample-replan-barrier.json",
+    "029-sample-replan-event.json",
+    "030-sample-necessary-barrier.json",
+    "031-sample-necessary-event.json",
+    "032-sample-necessary-event.json",
+    "033-sample-necessary-barrier.json",
+    "034-sample-replan-event.json",
+    "035-sample-replan-barrier.json",
+    "036-sample-replan-barrier.json",
+    "037-sample-replan-event.json",
+    "038-sample-necessary-barrier.json",
+    "039-sample-necessary-event.json",
+    "040-sample-necessary-event.json",
+    "041-sample-necessary-barrier.json",
+    "042-sample-replan-event.json",
+    "043-sample-replan-barrier.json"
+  ],
+  "finished_at_utc": "2026-10-31T02:39:40.628238+00:00"
+}

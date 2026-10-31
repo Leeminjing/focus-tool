@@ -1,0 +1,440 @@
+{
+  "passed": true,
+  "config": {
+    "focus_commit": "340bf2b8607dfb536d9376d400a02b122a4542bb",
+    "base_commit": "e37960f8265f6f8600ce9eb46e335db9f9897da5",
+    "source_sha256": {
+      "cmd/runtime/main.go": "4b599cfff31ab75c63f7b25bcd820e915c092ca2857b9e0f05a30c9dddb8af20",
+      "cmd/runtime/main_test.go": "9830a1c4e05be63d9cef31f01c829a394f575e5dcee6e1e10a0a8108e0a00f6f",
+      "cmd/runtime/trace.go": "2ed75b662b58f38b92fd63c0764511d01ab3dac49fef28fc6fbd0bb48c109144",
+      "integration/focus/benchmark_patrol.py": "1adba2b5eedd46ea5518e93d72b4754e4eb32485867b4889d92f6b06cdb73f10",
+      "integration/focus/patrol_activation.py": "a5e9bc119f3140eaec7d751bd4b5fa0e4cc2b5ae68ccad3b46dca283c2b1818f",
+      "integration/focus/patrol_benchmark_tools.py": "4dcd6ed8852a304665050604da00fa98be7e08bc21bdc69ce3e1fbd795024c23",
+      "integration/focus/patrol_driver.py": "0d21de1686def9aa366bf579b1494a07d02075d3eea4379e8d45a85214d74cb2",
+      "integration/focus/patrol_service.py": "0daeefe7d327c3e36dafeffe82bcf6b60b8127d847c99925b966d4ad2256062d",
+      "integration/focus/patrol_store.py": "bafe2791113635c454a2b3d6d0160773112c44f3cf606c9002357e604c5077cd",
+      "integration/focus/patrol_tools.py": "aa6d3c63f33fe7f2f1f6730c5a63abf666806bda7674bd2d86e245e1ab4d03e6",
+      "integration/focus/run_automatic.py": "1d95646234ba666a8cd448b49a2dceec611c8e067d3f2effa0a39860ffa79c72",
+      "integration/focus/run_live.py": "62b3cc7208bc9d23f97f53f082b2e620b2aeb4e1885dd72d07b34f9110d4dabe",
+      "integration/focus/run_patrol.py": "d66f99104a53c212a30385cf2afeaa34a65540eb83284a795a46828c8384d99e",
+      "integration/focus/task_progress_probe.py": "26310bbee5753c0d6bb799d704a0d35135f617c54eacb1b3ab6ea8651f58f144",
+      "integration/focus/test_wake_controls.py": "5e7efc97eb99878f05a0a4c3d3645594fe44b1dd464bf9e3f41addb9fb65390f",
+      "python/focus_tool/__init__.py": "b7222e1f932f626de66c79ffa7aaa063e5769f99e25173a498019bddc51edf07",
+      "python/focus_tool/adapter.py": "c20e9c53212d2ac758d3d56048e6cdf91078fb6e2c7b1fcceb36f09514532170",
+      "python/focus_tool/bridge.py": "948e283795fff0ef339709cd400932e03c662b186c78aa71d0f567b43edbcc90",
+      "python/focus_tool/client.py": "e4441b2470fd2d19a0dc77b0e4ce3163572cfa20220ac121c1667d6b81b763c9",
+      "python/focus_tool/custody.py": "b9a8c45e408ebadf3779c782e75f7ed4db69697c44dc519f92fb194de2c334c5",
+      "python/focus_tool/transport.py": "f8259eb4d7e693a89504ba346cee7504fc65d9c36a430a5cc91a2cf7421ae318",
+      "python/focus_tool/wake.py": "aedb475afcb031e3801b034555f6e10ec7f69f23c4a3ba72560d62cba68ad73a",
+      "runtime/compaction.go": "e7a23b083122b8a65f723f52abc7f0ab28d0bad1e0c5e18a1f00dc5a5d934b18",
+      "runtime/compaction_test.go": "b5736e702fb0e647ab415c01224b541f53bf0b601fa62731c55043c685aab5f7",
+      "runtime/dispatch_control.go": "c0256c26d4e2aa42fe5ec4cb2bb54307b436cef94c6d4d3b894eae90085e00dc",
+      "runtime/dispatch_control_test.go": "9a31bed6788d0a052318d017a87f8b62c3ba15d218c2e3ce85978d39a323ebcf",
+      "runtime/durable_unix.go": "8160a1c04111a59770fe51e7088440c19d07514dfc32dc6661490aa36d5cc321",
+      "runtime/durable_windows.go": "335c57e6f912fc5197bdf82e485d8c66462fa308a790c8da391170c7513afe89",
+      "runtime/engine.go": "3a9814a0210f9850ed661c25b167977855959cd17a61a0d13ae6185700bb8e69",
+      "runtime/engine_test.go": "12a00eb975d7875b781727d22128639098861cd0460b0b3c0fe349b2b495662d",
+      "runtime/history.go": "6ae90cf69439ff84023b3f507bfcc8e81dc5a12c700ba254497c946eb64bcf9e",
+      "runtime/history_test.go": "908a63d821708cdd00e5f42d12d00cd914b4ea0bc5b22be65a7bd5f1fe154ff1",
+      "runtime/journal.go": "028b1c28735b07e86c80f91a7f1410aa179fd6140600c49933c8bb375b3a9641",
+      "runtime/lock_unix.go": "72010d2ce685fd6e9e550276f3f570cf609af384f73a9a9b66d0a3098110ab5a",
+      "runtime/lock_windows.go": "2bee60f15fd478cc18820a0abda6763c191c2165cacb10c4cf4cfc4aacfa144e",
+      "runtime/process.go": "221dda57b3fe6b275d6a1c2b0bd6b04177fc4c752cba26572357c51c2fc91179",
+      "runtime/process_test.go": "873499064fed7a633e85088015c027c57fd5b4203089e18a45a635af239199c2",
+      "runtime/python_pool.go": "047f203945d041a4eceec9260999d8daf09420b14d0950d9016eda7f439b59b8",
+      "runtime/python_pool_test.go": "6fe012f157983174e9b77cf97d2392df510b324858bd799a2484d9d44b1594b5",
+      "runtime/python_pool_worker.py": "d78ca081bf926d2b54f0bf26b6621fa925f2b7d85e055a913464f00775197ba6",
+      "runtime/python_worker.py": "ea97f3d4083daf05c5c053a08f8c60a539795b2d278d40fda1669b69722800e0",
+      "runtime/recovery.go": "de58d514b1079ab088bc743245185c4c53fb695d2e0ecc8c72765d7cdaae0345",
+      "runtime/trace.go": "0bc187f7cac7a697ca5a80c805a383f54aa5ac23ac4f22de0916951857c89115",
+      "runtime/trace_test.go": "be50dd6c471383a41a999985716daf3cc7bb0725749a3de2b5a0a9c83cbea2c2",
+      "runtime/types.go": "07fd138e606215edbf7add748280f71ce6582f81cd3ef14ab3684df2dd83339f"
+    },
+    "workload": {
+      "corpus_bytes": 8388608,
+      "passes": {
+        "A": 1461,
+        "B": 365
+      },
+      "calibration": {
+        "probe_passes": 32,
+        "probe_seconds": 0.1189845,
+        "target_seconds": 8.0,
+        "explicit_passes": 1461
+      },
+      "expected_digest": {
+        "A": "1d7459d2f1f8fcbadf3a3e27f88f4487a26eff996649707b3ded45232f890ec5",
+        "B": "e672896a977d3576c781c336c4d6aa73f6396aa508e9105f44bcc6efc1e32858"
+      }
+    },
+    "repeat": 3,
+    "warmup_per_arm": 1,
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 (main, Jul 23 2026, 14:42:43) [MSC v.1944 64 bit (AMD64)]",
+    "go": "go version go1.26.5 windows/amd64",
+    "tool_concurrency": 4,
+    "run_concurrency": 2,
+    "journal": "per-mutation fsync; default background 8 MiB",
+    "task_progress_probe": false,
+    "decision_rule": "barrier waits only same-Context original batch; B is independent and finite",
+    "started_at_utc": "2026-10-31T02:39:55.751358+00:00"
+  },
+  "sample_count": 16,
+  "summary": {
+    "replan": {
+      "barrier": {
+        "n": 3,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 11333.3601,
+          "first_body_to_quiescent_ms": 9886.6305,
+          "check_finished_to_effective_ms": 7608.3048,
+          "service_start_through_shutdown_ms": 11376.6943
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 14.817,
+            "window_wall_ms": 14.7166,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "coordinator_release": {
+            "total_ms": 6.592,
+            "window_wall_ms": 6.3479,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "kernel_commit": {
+            "total_ms": 213.0747,
+            "window_wall_ms": 213.5312,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "observation_capture": {
+            "total_ms": 301.2967,
+            "window_wall_ms": 304.7109,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "patrol_decision": {
+            "total_ms": 27.5262,
+            "window_wall_ms": 27.6405,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_identity_read": {
+            "total_ms": 2.397,
+            "window_wall_ms": 2.3896,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_maintenance": {
+            "total_ms": 311.5289,
+            "window_wall_ms": 311.246,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "round_state_read": {
+            "total_ms": 7.8882,
+            "window_wall_ms": 7.4691,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "schedule_total": {
+            "total_ms": 1281.5187,
+            "window_wall_ms": 1281.6824,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "task_progress": {
+            "total_ms": 404.8182,
+            "window_wall_ms": 404.6024,
+            "crosses_boundary": 0,
+            "calls": 4
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2,
+          "progress_drain_calls": 4,
+          "progress_work_items": 2
+        },
+        "activation_count_medians": {
+          "A": 3,
+          "B": 2
+        },
+        "scan_states": {
+          "completed": 3
+        }
+      },
+      "event": {
+        "n": 3,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 6342.3211,
+          "first_body_to_quiescent_ms": 4917.8837,
+          "check_finished_to_effective_ms": 2645.5328,
+          "service_start_through_shutdown_ms": 6381.8766
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 22.1961,
+            "window_wall_ms": 21.9354,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "coordinator_release": {
+            "total_ms": 5.7128,
+            "window_wall_ms": 5.7068,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "kernel_commit": {
+            "total_ms": 224.521,
+            "window_wall_ms": 224.8462,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "observation_capture": {
+            "total_ms": 336.9834,
+            "window_wall_ms": 337.479,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "patrol_decision": {
+            "total_ms": 32.5785,
+            "window_wall_ms": 32.7468,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_identity_read": {
+            "total_ms": 3.746,
+            "window_wall_ms": 3.6779,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_maintenance": {
+            "total_ms": 314.0894,
+            "window_wall_ms": 314.1725,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "round_state_read": {
+            "total_ms": 8.796,
+            "window_wall_ms": 8.3495,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "schedule_total": {
+            "total_ms": 1460.855,
+            "window_wall_ms": 1460.7457,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "task_progress": {
+            "total_ms": 481.6801,
+            "window_wall_ms": 480.9217,
+            "crosses_boundary": 0,
+            "calls": 4
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2,
+          "progress_drain_calls": 4,
+          "progress_work_items": 2
+        },
+        "activation_count_medians": {
+          "A": 3,
+          "B": 2
+        },
+        "scan_states": {
+          "cancelled": 3
+        }
+      }
+    },
+    "necessary": {
+      "barrier": {
+        "n": 3,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 8984.3323,
+          "first_body_to_quiescent_ms": 7639.3166,
+          "check_finished_to_effective_ms": 6978.3399,
+          "service_start_through_shutdown_ms": 9022.7528
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 18.8781,
+            "window_wall_ms": 18.7063,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "coordinator_release": {
+            "total_ms": 6.382,
+            "window_wall_ms": 6.2577,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "kernel_commit": {
+            "total_ms": 212.8141,
+            "window_wall_ms": 212.7945,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "observation_capture": {
+            "total_ms": 339.531,
+            "window_wall_ms": 339.4254,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "patrol_decision": {
+            "total_ms": 25.8749,
+            "window_wall_ms": 26.6734,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_identity_read": {
+            "total_ms": 2.4744,
+            "window_wall_ms": 2.3398,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_maintenance": {
+            "total_ms": 309.1253,
+            "window_wall_ms": 310.2168,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "round_state_read": {
+            "total_ms": 7.3053,
+            "window_wall_ms": 6.9297,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "schedule_total": {
+            "total_ms": 1327.8998,
+            "window_wall_ms": 1326.5324,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "task_progress": {
+            "total_ms": 433.9189,
+            "window_wall_ms": 433.5552,
+            "crosses_boundary": 0,
+            "calls": 4
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2,
+          "progress_drain_calls": 4,
+          "progress_work_items": 2
+        },
+        "activation_count_medians": {
+          "A": 2,
+          "B": 2
+        },
+        "scan_states": {
+          "completed": 3
+        }
+      },
+      "event": {
+        "n": 3,
+        "medians_ms": {
+          "service_start_to_quiescent_ms": 9076.8907,
+          "first_body_to_quiescent_ms": 7654.3596,
+          "check_finished_to_effective_ms": 7013.6648,
+          "service_start_through_shutdown_ms": 9117.1412
+        },
+        "first_response_phase_medians": {
+          "coordinator_claim": {
+            "total_ms": 24.2166,
+            "window_wall_ms": 24.135,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "coordinator_release": {
+            "total_ms": 6.132,
+            "window_wall_ms": 5.9874,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "kernel_commit": {
+            "total_ms": 235.6354,
+            "window_wall_ms": 235.834,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "observation_capture": {
+            "total_ms": 336.604,
+            "window_wall_ms": 336.565,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "patrol_decision": {
+            "total_ms": 27.0413,
+            "window_wall_ms": 27.3604,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_identity_read": {
+            "total_ms": 2.8405,
+            "window_wall_ms": 2.992,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "round_maintenance": {
+            "total_ms": 312.5866,
+            "window_wall_ms": 312.655,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "round_state_read": {
+            "total_ms": 9.5519,
+            "window_wall_ms": 9.2767,
+            "crosses_boundary": 0,
+            "calls": 2
+          },
+          "schedule_total": {
+            "total_ms": 1440.1404,
+            "window_wall_ms": 1440.4738,
+            "crosses_boundary": 0,
+            "calls": 1
+          },
+          "task_progress": {
+            "total_ms": 472.4063,
+            "window_wall_ms": 472.404,
+            "crosses_boundary": 0,
+            "calls": 4
+          }
+        },
+        "first_response_loop_medians": {
+          "round_iterations": 2,
+          "progress_drain_calls": 4,
+          "progress_work_items": 2
+        },
+        "activation_count_medians": {
+          "A": 3,
+          "B": 2
+        },
+        "scan_states": {
+          "completed": 3
+        }
+      }
+    }
+  },
+  "samples": [
+    "000-warmup-replan-barrier.json",
+    "001-warmup-replan-event.json",
+    "002-warmup-necessary-barrier.json",
+    "003-warmup-necessary-event.json",
+    "004-sample-replan-barrier.json",
+    "005-sample-replan-event.json",
+    "006-sample-necessary-barrier.json",
+    "007-sample-necessary-event.json",
+    "008-sample-necessary-event.json",
+    "009-sample-necessary-barrier.json",
+    "010-sample-replan-event.json",
+    "011-sample-replan-barrier.json",
+    "012-sample-replan-barrier.json",
+    "013-sample-replan-event.json",
+    "014-sample-necessary-barrier.json",
+    "015-sample-necessary-event.json"
+  ],
+  "finished_at_utc": "2026-10-31T02:43:01.946786+00:00"
+}
